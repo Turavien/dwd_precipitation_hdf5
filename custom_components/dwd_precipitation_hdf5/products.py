@@ -402,17 +402,3 @@ class RadolanSF(RadolanProduct):
         return (
             f"{DWD_RADOLAN_URL}/sf/raa01-sf_10000-{ts}-dwd---bin.hdf5"
         )
-
-
-class RadolanSFLastYesterday(RadolanSF):
-    """DWD radolan SF 24 hour precipitation analysis."""
-
-    PRODUCT_KEY = "sf_2350"
-
-    RELEASE_INTERVAL = timedelta(hours=24)
-
-    RELEASE_DELAY = timedelta(minutes=28)
-
-    RELEASE_OFFSET = timedelta(hours=23, minutes=50)
-
-    USE_LOCAL_TIME = True
