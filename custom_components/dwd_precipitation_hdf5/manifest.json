@@ -1,0 +1,18 @@
+{
+  "domain": "dwd_precipitation_hdf5",
+  "name": "DWD Precipitation HDF5",
+  "version": "2026.05.17",
+  "documentation": "https://github.com/Turavien/dwd_precipitation_hdf5",
+  "issue_tracker": "https://github.com/Turavien/dwd_precipitation_hdf5/issues",
+  "codeowners": [
+    "@Turavien"
+  ],
+  "config_flow": true,
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "requirements": [
+    "numpy",
+    "h5py"
+  ],
+  "dependencies": []
+}

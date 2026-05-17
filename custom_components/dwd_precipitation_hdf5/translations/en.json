@@ -1,0 +1,53 @@
+{
+  "title": "DWD Precipitation HDF5",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure DWD Precipitation",
+        "description": "Configure location and name",
+        "data": {
+          "name": "Name",
+          "coordinates": "Coordinates"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "Invalid name",
+      "invalid_coordinates": "Invalid coordinates"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "precipitation_last_1h": {
+        "name": "Precipitation during 1h"
+      },
+      "precipitation_last_24h": {
+        "name": "Precipitation during 24h"
+      },
+      "precipitation_next_5min": {
+        "name": "Precipitation next 5 min"
+      },
+      "precipitation_next_10min": {
+        "name": "Precipitation next 10 min"
+      },
+      "precipitation_next_15min": {
+        "name": "Precipitation next 15 min"
+      },
+      "precipitation_next_30min": {
+        "name": "Precipitation next 30 min"
+      },
+      "precipitation_next_45min": {
+        "name": "Precipitation next 45 min"
+      },
+      "precipitation_next_60min": {
+        "name": "Precipitation next 60 min"
+      },
+      "precipitation_next_90min": {
+        "name": "Precipitation next 90 min"
+      },
+      "precipitation_next_120min": {
+        "name": "Precipitation next 120 min"
+      }
+    }
+  }
+}
