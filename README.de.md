@@ -1,4 +1,7 @@
 🇬🇧 English version: [README.md](README.md)
+[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
+![Version](https://img.shields.io/badge/version-2026.05.17-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 # DWD Niederschlag HDF5
 
