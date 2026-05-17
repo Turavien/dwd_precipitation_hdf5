@@ -1,112 +1,75 @@
 # DWD Precipitation HDF5
 
-Custom Home Assistant integration providing high-resolution precipitation
-analysis and short-term precipitation forecasts for Germany based on
-DWD RADOLAN and RADVOR data.
+🇩🇪 Deutsche Version: [README.de.md](README.de.md)
 
-This integration provides:
+This custom Home Assistant integration provides high-resolution precipitation data from the German Weather Service (DWD).
 
-- precipitation [mm] during the last hour
-- precipitation [mm] during the last 24 hours
-- cumulative precipitation forecasts [mm] within:
-  - next 5 minutes
-  - next 10 minutes
-  - next 15 minutes
-  - next 30 minutes
-  - next 45 minutes
-  - next 60 minutes
-  - next 90 minutes
-  - next 120 minutes
+The data is based on radar composites with an approximate spatial resolution of 1 km × 1 km.
 
-Forecast values are internally calculated from all available 5-minute
-RADVOR forecast intervals and accumulated into cumulative precipitation
-totals for the selected time windows.
+The integration automatically selects the nearest radar grid cell for the configured location.
 
-The integration supports locations within Germany and nearby border
-regions covered by the RADOLAN/RADVOR grid.
+The integration uses:
 
----
+* RADOLAN RW
+* RADOLAN SF
+* RADVOR RQ
 
-# Data sources
+and provides:
 
-All weather data is provided by the Deutscher Wetterdienst (DWD).
+* precipitation during the last hour [mm]
+* precipitation during the last 24 hours [mm]
+* cumulative precipitation forecasts [mm] for:
 
-Used products:
+  * +5 minutes
+  * +10 minutes
+  * +15 minutes
+  * +30 minutes
+  * +45 minutes
+  * +60 minutes
+  * +90 minutes
+  * +120 minutes
 
-- RADVOR RQ
-- RADOLAN RW
-- RADOLAN SF
+## Special Features
 
-More information:
+Forecast values are internally calculated by cumulatively processing all available 5-minute RADVOR forecast intervals.
 
-https://www.dwd.de
+The integration therefore provides actual precipitation sums in millimeters [mm] instead of instantaneous precipitation intensities [mm/h].
 
----
+The integration only works within Germany and nearby border regions where DWD radar data is available.
 
-# Installation
+## Data Sources
 
-## HACS
+All data is provided by the German Weather Service (DWD).
 
-Add this repository as a custom repository in HACS.
+### RADVOR RQ
 
-Category:
-Integration
+Radar-based short-term precipitation forecasts with high temporal and spatial resolution.
 
-Restart Home Assistant after installation.
+### RADOLAN RW
 
-Then add the integration via:
+Radar-based precipitation analysis for the last hour.
 
-Settings
-→ Devices & Services
-→ Add Integration
+### RADOLAN SF
 
----
+Radar-based precipitation analysis for the last 24 hours.
 
-## Manual installation
+## Installation via HACS
 
-Copy:
+1. Open HACS
+2. Add a custom repository
+3. Enter the repository URL
+4. Select category “Integration”
+5. Install the integration
+6. Restart Home Assistant
 
-custom_components/dwd_precipitation_hdf5
+## License and Credits
 
-into your Home Assistant configuration directory.
+The original integration was published by @Hoffmann77.
 
-Restart Home Assistant afterwards.
+This version has been extensively reworked and adapted to the current structure of the DWD RADVOR forecast data.
 
----
-
-# Disclaimer
-
-This is an independent custom Home Assistant integration.
-
-It is not affiliated with, endorsed by, or connected to
-Deutscher Wetterdienst (DWD).
-
-Weather forecasts and precipitation estimations may contain inaccuracies
-and should not be used for safety-critical decisions.
-
----
-
-# Origin
-
-Originally based on work by @Hoffmann77.
-
-This version has been extensively modified and extended, including:
-
-- migration to HDF5 processing
-- cumulative precipitation calculations
-- localization support
-- improved fallback handling
-- additional forecast intervals
-- Home Assistant compatibility fixes
-
----
-
-# License
-
-This project includes adapted components derived from wradlib.
+Parts of the radar processing are based on components of the wradlib project.
 
 The wradlib license can be found under:
 
-radar/LICENSE.txt
-
-The integration itself is licensed under the MIT License.
+custom_components/dwd_precipitation_hdf5/radar/LICENSE.txt
