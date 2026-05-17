@@ -6,10 +6,9 @@ DWD RADOLAN and RADVOR data.
 
 This integration provides:
 
-- precipitation during the last hour
-- precipitation during the last 24 hours
-- precipitation yesterday
-- cumulative precipitation forecasts within:
+- precipitation [mm] during the last hour
+- precipitation [mm] during the last 24 hours
+- cumulative precipitation forecasts [mm] within:
   - next 5 minutes
   - next 10 minutes
   - next 15 minutes
