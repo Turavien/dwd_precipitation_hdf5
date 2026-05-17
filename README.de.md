@@ -1,9 +1,15 @@
-🇬🇧 English version: [README.md](README.md)
+# DWD Precipitation HDF5
+
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
-![Version](https://img.shields.io/badge/version-2026.05.17-blue.svg)
+![GitHub release](https://img.shields.io/github/v/release/Turavien/dwd_precipitation_hdf5)
+![GitHub last commit](https://img.shields.io/github/last-commit/Turavien/dwd_precipitation_hdf5)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-# DWD Niederschlag HDF5
+[![Open your Home Assistant instance and open the repository inside HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Turavien&repository=dwd_precipitation_hdf5)
+
+[![Open your Home Assistant instance and start setting up a new integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=dwd_precipitation_hdf5)
+
+🇬🇧 English version: [README.md](README.md)
 
 Diese benutzerdefinierte Home-Assistant-Integration stellt hochaufgelöste Niederschlagsdaten des Deutschen Wetterdienstes (DWD) bereit.
 
