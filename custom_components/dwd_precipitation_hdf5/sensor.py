@@ -228,4 +228,9 @@ class DwdPrecipitationSensor(
         if data is None:
             return None
 
-        return self.entity_description.value_fn(data)
+        value = self.entity_description.value_fn(data)
+
+        if value is None:
+            return None
+
+        return round(value, 1)
