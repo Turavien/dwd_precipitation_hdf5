@@ -12,6 +12,7 @@ from homeassistant.helpers import selector
 from homeassistant.const import CONF_NAME
 
 from .const import DOMAIN, CONF_COORDS
+from .radar import get_dwd_grid_index
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,6 +52,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     coords["longitude"],
                     6
                 )
+
+                try:
+
+                    get_dwd_grid_index(
+                        data["latitude"],
+                        data["longitude"]
+                    )
+
+                except ValueError:
+
+                    errors["base"] = "outside_dwd_coverage"
 
                 data.pop(CONF_COORDS)
 

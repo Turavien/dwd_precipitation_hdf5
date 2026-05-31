@@ -1,3 +1,3 @@
-"""Minimal RADOLAN grid helpers."""
+"""Radar grid helpers."""
 
-from .georef import get_radolan_grid
+from .dwd_projection import get_dwd_grid_index

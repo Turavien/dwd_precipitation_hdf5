@@ -13,7 +13,8 @@
     },
     "error": {
       "invalid_name": "Invalid name",
-      "invalid_coordinates": "Invalid coordinates"
+      "invalid_coordinates": "Invalid coordinates",
+      "outside_dwd_coverage": "Location is outside DWD radar coverage"
     }
   },
   "entity": {

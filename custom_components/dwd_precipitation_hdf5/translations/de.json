@@ -13,7 +13,8 @@
     },
     "error": {
       "invalid_name": "Ungültiger Name",
-      "invalid_coordinates": "Ungültige Koordinaten"
+      "invalid_coordinates": "Ungültige Koordinaten",
+      "outside_dwd_coverage": "Standort liegt außerhalb des DWD-Radargebiets"
     }
   },
   "entity": {

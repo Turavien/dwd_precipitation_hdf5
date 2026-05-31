@@ -9,11 +9,12 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 from functools import cached_property
 
-import numpy as np
 from homeassistant.util import dt as dt_util
 
 from .utils import get_previous_multiple, async_get
-from .radar import get_radolan_grid
+from .radar import (
+    get_dwd_grid_index,
+)
 from .const import DWD_RADOLAN_URL, DWD_RADVOR_URL
 
 if TYPE_CHECKING:
@@ -50,18 +51,11 @@ class Product(ABC):
     @cached_property
     def index(self):
         """Return the index for the parsed radolan data."""
-        grid = get_radolan_grid(
-            self.GRID_ROWS,
-            self.GRID_COLS,
-            wgs84=True
+
+        return get_dwd_grid_index(
+            self.lat,
+            self.lon
         )
-        lon_grid = grid[:,:,0]
-        lat_grid = grid[:,:,1]
-
-        # Compute the squared Euclidean distances
-        dist_sq = (lat_grid - self.lat)**2 + (lon_grid - self.lon)**2
-
-        return np.unravel_index(np.argmin(dist_sq), dist_sq.shape)
 
     @property
     def requires_update(self) -> bool:
