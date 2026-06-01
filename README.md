@@ -15,13 +15,13 @@
 
 > **Note**
 >
-> This is not an official integration of the German Weather Service (DWD).
+> This is not an official integration of the German weather service _Deutscher Wetterdienst_ (DWD).
 >
 > This project is developed independently and is not affiliated with the Deutscher Wetterdienst.
 >
 > It uses publicly available DWD Open Data products only.
 
-This custom Home Assistant integration provides high-resolution precipitation data from the German Weather Service (DWD).
+This custom Home Assistant integration provides high-resolution precipitation data from the _Deutscher Wetterdienst_ (DWD).
 
 The project originated as a continuation of the [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) integration by [@Hoffmann77](https://github.com/Hoffmann77) after the DWD migrated its data products to HDF5, which temporarily rendered the original integration unusable.
 
