@@ -1,4 +1,4 @@
-# DWD Precipitation HDF5
+# DWD Rain Radar
 
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
 ![GitHub release](https://img.shields.io/github/v/release/Turavien/dwd_precipitation_hdf5)
@@ -11,11 +11,29 @@
 
 🇩🇪 Deutsche Version: [README.de.md](README.de.md)
 
+# DWD Rain Radar
+
+> **Note**
+>
+> This is not an official integration of the German Weather Service (DWD).
+>
+> This project is developed independently and is not affiliated with the Deutscher Wetterdienst.
+>
+> It uses publicly available DWD Open Data products only.
+
 This custom Home Assistant integration provides high-resolution precipitation data from the German Weather Service (DWD).
 
-The data is based on radar composites with an approximate spatial resolution of 1 km × 1 km.
+The project originated as a continuation of the [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) integration by [@Hoffmann77](https://github.com/Hoffmann77) after the DWD migrated its data products to HDF5, which temporarily rendered the original integration unusable.
 
-The integration automatically selects the nearest radar grid cell for the configured location.
+During this transition, most of the code was reworked and the provided entities were adapted to better suit individual use cases, especially automated garden irrigation control.
+
+## How it works
+
+The integration is based on official DWD radar products.
+
+The radar grids provide a spatial resolution of approximately 1 km × 1 km and consist of 1100 × 1200 grid cells.
+
+For the configured location, the grid cell whose center point is closest to the configured coordinates is selected automatically.
 
 The integration uses:
 
@@ -25,26 +43,28 @@ The integration uses:
 
 and provides:
 
-* precipitation during the last hour [mm]
-* precipitation during the last 24 hours [mm]
-* cumulative precipitation forecasts [mm] for:
+* Total precipitation during the last hour [mm]
+* Total precipitation during the last 24 hours [mm]
+* Cumulative precipitation forecasts [mm]
 
-  * +5 minutes
-  * +10 minutes
-  * +15 minutes
-  * +30 minutes
-  * +45 minutes
-  * +60 minutes
-  * +90 minutes
-  * +120 minutes
+  * within the next 5 minutes
+  * within the next 10 minutes
+  * within the next 15 minutes
+  * within the next 30 minutes
+  * within the next 45 minutes
+  * within the next 60 minutes
+  * within the next 90 minutes
+  * within the next 120 minutes
 
-## Special Features
+## Special features
 
-Forecast values are internally calculated by cumulatively processing all available 5-minute RADVOR forecast intervals.
+Forecast values are internally calculated by accumulating all available five-minute RADVOR forecast intervals.
 
-The integration therefore provides actual precipitation sums in millimeters [mm] instead of instantaneous precipitation intensities [mm/h].
+As a result, the integration provides the actually expected precipitation totals in millimetres [mm] rather than instantaneous precipitation intensities [mm/h].
 
-The integration only works within Germany and nearby border regions where DWD radar data is available.
+The integration only works within Germany and nearby border regions covered by DWD radar products.
+
+Locations outside the supported DWD radar coverage area are rejected during configuration.
 
 ## Data Sources
 
@@ -73,12 +93,9 @@ Radar-based precipitation analysis for the last 24 hours.
 
 ## License and Credits
 
-The original integration was published by @Hoffmann77.
-
+The original integration was published by [@Hoffmann77](https://github.com/Hoffmann77).
 This version has been extensively reworked and adapted to the current structure of the DWD RADVOR forecast data.
 
 Parts of the radar processing are based on components of the wradlib project.
-
 The wradlib license can be found under:
-
 custom_components/dwd_precipitation_hdf5/radar/LICENSE.txt
