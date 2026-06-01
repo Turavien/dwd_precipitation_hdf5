@@ -1,4 +1,4 @@
-"""DWD Precipitation HDF5 integration."""
+"""DWD Rain Radar integration."""
 
 import logging
 from dataclasses import dataclass
@@ -27,7 +27,7 @@ class MyData:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up DWD Precipitation HDF5 from a config entry."""
+    """Set up DWD Rain Radar from a config entry."""
     client = get_async_client(hass)
 
     lat = entry.data["latitude"]

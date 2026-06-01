@@ -1,4 +1,4 @@
-"""Data update coordinator for DWD Precipitation HDF5."""
+"""Data update coordinator for DWD Rain Radar."""
 
 from __future__ import annotations
 

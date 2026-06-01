@@ -1,7 +1,7 @@
 {
   "domain": "dwd_precipitation_hdf5",
-  "name": "DWD Precipitation HDF5",
-  "version": "2026.06.01",
+  "name": "DWD Rain Radar",
+  "version": "2026.06.2",
   "documentation": "https://github.com/Turavien/dwd_precipitation_hdf5",
   "issue_tracker": "https://github.com/Turavien/dwd_precipitation_hdf5/issues",
   "codeowners": [

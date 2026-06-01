@@ -1,5 +1,5 @@
 {
-  "name": "DWD Precipitation HDF5",
+  "name": "DWD Regenradar",
   "content_in_root": false,
   "country": [
     "DE"

@@ -1,4 +1,4 @@
-"""Constants for DWD Precipitation HDF5."""
+"""Constants for DWD Rain Radar."""
 
 from homeassistant.const import Platform
 

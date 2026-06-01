@@ -1,9 +1,9 @@
 {
-  "title": "DWD Niederschlag HDF5",
+  "title": "DWD Regenradar",
   "config": {
     "step": {
       "user": {
-        "title": "DWD Niederschlag konfigurieren",
+        "title": "DWD Regenradar konfigurieren",
         "description": "Standort und Name konfigurieren",
         "data": {
           "name": "Name",

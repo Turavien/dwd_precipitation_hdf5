@@ -1,9 +1,9 @@
 {
-  "title": "DWD Precipitation HDF5",
+  "title": "DWD Rain Radar",
   "config": {
     "step": {
       "user": {
-        "title": "Configure DWD Precipitation",
+        "title": "Configure DWD Rain Radar",
         "description": "Configure location and name",
         "data": {
           "name": "Name",
