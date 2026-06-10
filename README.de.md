@@ -27,6 +27,16 @@ Die Integration entstand als Weiterentwicklung der Integration [DWD Precipitatio
 
 Im Zuge dieser Umstellung wurde der Code weitgehend überarbeitet und die bereitgestellten Entitäten an die eigenen Anforderungen angepasst, insbesondere für die automatisierte Steuerung einer Gartenbewässerung.
 
+> **Wichtig**
+>
+> Diese Integration liefert **kumulierte Niederschlagssummen** vom aktuellen Zeitpunkt bis zum gewählten Vorhersagehorizont (beispielsweise innerhalb der nächsten 30, 60 oder 120 Minuten).
+>
+> Die ursprüngliche Integration [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) von [@Hoffmann77](https://github.com/Hoffmann77) lieferte dagegen den **prognostizierten Niederschlagswert zu einem bestimmten zukünftigen Zeitpunkt**.
+>
+> Die angezeigten Werte sind daher nicht direkt vergleichbar und dienen unterschiedlichen Anwendungszwecken.
+>
+> Bitte prüfen Sie, ob dieses Verhalten zu Ihrem gewünschten Einsatzzweck passt.
+
 ## Funktionsweise
 
 Die Daten basieren auf den offiziellen Radarprodukten des Deutschen Wetterdienstes.
