@@ -27,6 +27,16 @@ The project originated as a continuation of the [DWD Precipitation](https://gith
 
 During this transition, most of the code was reworked and the provided entities were adapted to better suit individual use cases, especially automated garden irrigation control.
 
+> **Important**
+>
+> This integration provides **cumulative precipitation totals** from now until the selected forecast horizon (for example within the next 30, 60 or 120 minutes).
+>
+> The original [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) integration by [@Hoffmann77](https://github.com/Hoffmann77) provided the **forecast precipitation value at a specific future point in time**.
+>
+> As a result, the values are not directly comparable and serve different purposes.
+>
+> Please ensure that this behaviour matches your intended use case.
+
 ## How it works
 
 The integration is based on official DWD radar products.
