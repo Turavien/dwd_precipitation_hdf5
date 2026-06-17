@@ -3,6 +3,7 @@
 import tarfile
 import logging
 import h5py
+import httpx
 from io import BytesIO
 from datetime import datetime, timedelta
 from abc import ABC, abstractmethod
@@ -298,6 +299,18 @@ class RadolanProduct(Product):
                 self.curr_release = ts
 
                 break
+
+            except httpx.HTTPStatusError as err:
+
+                if err.response.status_code == 404:
+                    continue
+
+                _LOGGER.warning(
+                    "%s RELEASE %s FAILED: %s",
+                    self.__class__.__name__,
+                    ts,
+                    err
+                )
 
             except Exception as err:
 
