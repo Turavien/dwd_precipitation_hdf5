@@ -65,7 +65,7 @@ Die Integration verwendet das offizielle RADVOR-RS-Vorhersageprodukt des Deutsch
 
 Jede RS-Datei enthält die erwartete Niederschlagssumme für ein Vorhersagefenster von einer Stunde.
 
-Daraus werden kumulierte Niederschlagssummen für die nächsten 1, 2 und 3 Stunden berechnet.
+Daraus werden kumulierte Niederschlagssummen über einen Vorhersagehorizont von bis zu 3 Stunden berechnet.
 
 Die Werte werden als erwartete Niederschlagssummen in Millimetern [mm] bereitgestellt und eignen sich daher besonders für Anwendungen wie die automatische Gartenbewässerung.
 

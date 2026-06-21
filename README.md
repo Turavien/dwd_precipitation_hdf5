@@ -29,7 +29,7 @@ During this transition, most of the code was reworked and the provided entities 
 
 > **Important**
 >
->This integration provides cumulative precipitation totals for the next 1, 2 and 3 hours.
+> This integration provides cumulative precipitation totals for the next 1, 2 and 3 hours.
 >
 > The original [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) integration by [@Hoffmann77](https://github.com/Hoffmann77) provided the **forecast precipitation value at a specific future point in time**.
 >
