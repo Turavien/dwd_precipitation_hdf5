@@ -29,7 +29,7 @@ Im Zuge dieser Umstellung wurde der Code weitgehend überarbeitet und die bereit
 
 > **Wichtig**
 >
-> Diese Integration liefert **kumulierte Niederschlagssummen** vom aktuellen Zeitpunkt bis zum gewählten Vorhersagehorizont (beispielsweise innerhalb der nächsten 30, 60 oder 120 Minuten).
+> Diese Integration liefert kumulierte Niederschlagssummen für die nächsten 1, 2 und 3 Stunden.
 >
 > Die ursprüngliche Integration [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) von [@Hoffmann77](https://github.com/Hoffmann77) lieferte dagegen den **prognostizierten Niederschlagswert zu einem bestimmten zukünftigen Zeitpunkt**.
 >
@@ -55,22 +55,19 @@ und stellt folgende Werte bereit:
 
 * Gesamtniederschlag der letzten Stunde [mm]
 * Gesamtniederschlag der letzten 24 Stunden [mm]
-* Kumulierte Niederschlagsvorhersagen [mm]
-
-  * innerhalb der nächsten 5 Minuten
-  * innerhalb der nächsten 10 Minuten
-  * innerhalb der nächsten 15 Minuten
-  * innerhalb der nächsten 30 Minuten
-  * innerhalb der nächsten 45 Minuten
-  * innerhalb der nächsten 60 Minuten
-  * innerhalb der nächsten 90 Minuten
-  * innerhalb der nächsten 120 Minuten
+* Kumulierte Niederschlagsvorhersage für die nächste Stunde [mm]
+* Kumulierte Niederschlagsvorhersage für die nächsten 2 Stunden [mm]
+* Kumulierte Niederschlagsvorhersage für die nächsten 3 Stunden [mm]
 
 ## Besonderheiten
 
-Die Vorhersagewerte werden intern aus allen verfügbaren Fünf-Minuten-Intervallen der RADVOR-Daten kumuliert berechnet.
+Die Integration verwendet das offizielle RADVOR-RS-Vorhersageprodukt des Deutschen Wetterdienstes.
 
-Dadurch liefert die Integration die tatsächlich erwarteten Niederschlagssummen in Millimetern [mm] und nicht lediglich die zu einem bestimmten Zeitpunkt erwartete Niederschlagsintensität [mm/h].
+Jede RS-Datei enthält die erwartete Niederschlagssumme für ein Vorhersagefenster von einer Stunde.
+
+Daraus werden kumulierte Niederschlagssummen für die nächsten 1, 2 und 3 Stunden berechnet.
+
+Die Werte werden als erwartete Niederschlagssummen in Millimetern [mm] bereitgestellt und eignen sich daher besonders für Anwendungen wie die automatische Gartenbewässerung.
 
 Die Integration funktioniert nur innerhalb Deutschlands sowie in grenznahen Bereichen, für die DWD-Radardaten verfügbar sind.
 

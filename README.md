@@ -29,7 +29,7 @@ During this transition, most of the code was reworked and the provided entities 
 
 > **Important**
 >
-> This integration provides **cumulative precipitation totals** from now until the selected forecast horizon (for example within the next 30, 60 or 120 minutes).
+>This integration provides cumulative precipitation totals for the next 1, 2 and 3 hours.
 >
 > The original [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) integration by [@Hoffmann77](https://github.com/Hoffmann77) provided the **forecast precipitation value at a specific future point in time**.
 >
@@ -55,22 +55,23 @@ and provides:
 
 * Total precipitation during the last hour [mm]
 * Total precipitation during the last 24 hours [mm]
-* Cumulative precipitation forecasts [mm]
-
-  * within the next 5 minutes
-  * within the next 10 minutes
-  * within the next 15 minutes
-  * within the next 30 minutes
-  * within the next 45 minutes
-  * within the next 60 minutes
-  * within the next 90 minutes
-  * within the next 120 minutes
+* Cumulative precipitation forecast for the next 1 hour [mm]
+* Cumulative precipitation forecast for the next 2 hours [mm]
+* Cumulative precipitation forecast for the next 3 hours [mm]
 
 ## Special features
 
-Forecast values are internally calculated by accumulating all available five-minute RADVOR forecast intervals.
+The integration uses the official DWD RADVOR RS forecast product.
 
-As a result, the integration provides the actually expected precipitation totals in millimetres [mm] rather than instantaneous precipitation intensities [mm/h].
+Each RS forecast file contains the expected precipitation sum for one forecast hour.
+
+The integration provides cumulative precipitation totals:
+
+* next 1 hour
+* next 2 hours
+* next 3 hours
+
+Values are reported as expected precipitation totals in millimetres [mm] and are therefore particularly suitable for automated irrigation control.
 
 The integration only works within Germany and nearby border regions covered by DWD radar products.
 
