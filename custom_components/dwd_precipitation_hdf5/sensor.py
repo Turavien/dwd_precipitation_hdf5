@@ -60,7 +60,7 @@ SENSORS = (
     ),
 
     PrecipitationDescription(
-        key="radvor_rq_060",
+        key="radvor_rq_1h",
         translation_key="precipitation_next_1h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
@@ -73,7 +73,7 @@ SENSORS = (
     ),
 
     PrecipitationDescription(
-        key="radvor_rq_120",
+        key="radvor_rq_2h",
         translation_key="precipitation_next_2h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
@@ -86,7 +86,7 @@ SENSORS = (
     ),
 
     PrecipitationDescription(
-        key="radvor_rq_180",
+        key="radvor_rq_3h",
         translation_key="precipitation_next_3h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
