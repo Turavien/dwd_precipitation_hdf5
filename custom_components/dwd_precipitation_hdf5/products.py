@@ -144,29 +144,7 @@ class RadvorRQ(Product):
                     for suffix in [
 
                         "000",
-                        "005",
-                        "010",
-                        "015",
-                        "020",
-                        "025",
-                        "030",
-                        "035",
-                        "040",
-                        "045",
-                        "050",
-                        "055",
                         "060",
-                        "065",
-                        "070",
-                        "075",
-                        "080",
-                        "085",
-                        "090",
-                        "095",
-                        "100",
-                        "105",
-                        "110",
-                        "115",
                         "120",
                     ]:
 
@@ -236,19 +214,9 @@ class RadvorRQ(Product):
 
                     new_data[0],
 
-                    sum(new_data[0:2]),
+                    new_data[0] + new_data[1],
 
-                    sum(new_data[0:3]),
-
-                    sum(new_data[0:6]),
-
-                    sum(new_data[0:9]),
-
-                    sum(new_data[0:12]),
-
-                    sum(new_data[0:18]),
-
-                    sum(new_data[0:24]),
+                    new_data[0] + new_data[1] + new_data[2],
                 ]
 
                 _LOGGER.info(

@@ -25,29 +25,14 @@
       "precipitation_last_24h": {
         "name": "Niederschlag letzte 24 Std"
       },
-      "precipitation_next_5min": {
-        "name": "Niederschlag nächste 5 Min"
+      "precipitation_next_1h": {
+        "name": "Niederschlag nächste 1 Std"
       },
-      "precipitation_next_10min": {
-        "name": "Niederschlag nächste 10 Min"
+      "precipitation_next_2h": {
+        "name": "Niederschlag nächste 2 Std"
       },
-      "precipitation_next_15min": {
-        "name": "Niederschlag nächste 15 Min"
-      },
-      "precipitation_next_30min": {
-        "name": "Niederschlag nächste 30 Min"
-      },
-      "precipitation_next_45min": {
-        "name": "Niederschlag nächste 45 Min"
-      },
-      "precipitation_next_60min": {
-        "name": "Niederschlag nächste 60 Min"
-      },
-      "precipitation_next_90min": {
-        "name": "Niederschlag nächste 90 Min"
-      },
-      "precipitation_next_120min": {
-        "name": "Niederschlag nächste 120 Min"
+      "precipitation_next_3h": {
+        "name": "Niederschlag nächste 3 Std"
       }
     }
   }

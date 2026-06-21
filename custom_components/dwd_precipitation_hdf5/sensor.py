@@ -60,8 +60,8 @@ SENSORS = (
     ),
 
     PrecipitationDescription(
-        key="radvor_rq_005",
-        translation_key="precipitation_next_5min",
+        key="radvor_rq_060",
+        translation_key="precipitation_next_1h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.MEASUREMENT,
@@ -73,8 +73,8 @@ SENSORS = (
     ),
 
     PrecipitationDescription(
-        key="radvor_rq_010",
-        translation_key="precipitation_next_10min",
+        key="radvor_rq_120",
+        translation_key="precipitation_next_2h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.MEASUREMENT,
@@ -86,8 +86,8 @@ SENSORS = (
     ),
 
     PrecipitationDescription(
-        key="radvor_rq_015",
-        translation_key="precipitation_next_15min",
+        key="radvor_rq_180",
+        translation_key="precipitation_next_3h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.MEASUREMENT,
@@ -98,72 +98,7 @@ SENSORS = (
             else None,
     ),
 
-    PrecipitationDescription(
-        key="radvor_rq_030",
-        translation_key="precipitation_next_30min",
-        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
-        device_class=SensorDeviceClass.PRECIPITATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda data:
-            data["rq"][3]
-            if data.get("rq") and len(data["rq"]) > 3
-            else None,
-    ),
-
-    PrecipitationDescription(
-        key="radvor_rq_045",
-        translation_key="precipitation_next_45min",
-        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
-        device_class=SensorDeviceClass.PRECIPITATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda data:
-            data["rq"][4]
-            if data.get("rq") and len(data["rq"]) > 4
-            else None,
-    ),
-
-    PrecipitationDescription(
-        key="radvor_rq_060",
-        translation_key="precipitation_next_60min",
-        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
-        device_class=SensorDeviceClass.PRECIPITATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda data:
-            data["rq"][5]
-            if data.get("rq") and len(data["rq"]) > 5
-            else None,
-    ),
-
-    PrecipitationDescription(
-        key="radvor_rq_090",
-        translation_key="precipitation_next_90min",
-        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
-        device_class=SensorDeviceClass.PRECIPITATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda data:
-            data["rq"][6]
-            if data.get("rq") and len(data["rq"]) > 6
-            else None,
-    ),
-
-    PrecipitationDescription(
-        key="radvor_rq_120",
-        translation_key="precipitation_next_120min",
-        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
-        device_class=SensorDeviceClass.PRECIPITATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda data:
-            data["rq"][7]
-            if data.get("rq") and len(data["rq"]) > 7
-            else None,
-    ),
 )
-
 
 async def async_setup_entry(
     hass: HomeAssistant,

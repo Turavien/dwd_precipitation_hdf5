@@ -20,34 +20,19 @@
   "entity": {
     "sensor": {
       "precipitation_last_1h": {
-        "name": "Precipitation during 1h"
+        "name": "Precipitation last 1h"
       },
       "precipitation_last_24h": {
-        "name": "Precipitation during 24h"
+        "name": "Precipitation last 24h"
       },
-      "precipitation_next_5min": {
-        "name": "Precipitation next 5 min"
+      "precipitation_next_1h": {
+        "name": "Precipitation next 1h"
       },
-      "precipitation_next_10min": {
-        "name": "Precipitation next 10 min"
+      "precipitation_next_2h": {
+        "name": "Precipitation next 2h"
       },
-      "precipitation_next_15min": {
-        "name": "Precipitation next 15 min"
-      },
-      "precipitation_next_30min": {
-        "name": "Precipitation next 30 min"
-      },
-      "precipitation_next_45min": {
-        "name": "Precipitation next 45 min"
-      },
-      "precipitation_next_60min": {
-        "name": "Precipitation next 60 min"
-      },
-      "precipitation_next_90min": {
-        "name": "Precipitation next 90 min"
-      },
-      "precipitation_next_120min": {
-        "name": "Precipitation next 120 min"
+      "precipitation_next_3h": {
+        "name": "Precipitation next 3h"
       }
     }
   }
