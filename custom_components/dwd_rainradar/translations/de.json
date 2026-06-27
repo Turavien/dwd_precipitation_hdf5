@@ -50,10 +50,10 @@
         "name": "Max. Regenintensität Ereignis"
       },
       "rain_start": {
-        "name": "Regenbeginn"
+        "name": "Beginn Regen"
       },
       "rain_end": {
-        "name": "Regenende"
+        "name": "Ende Regen"
       },
       "rain_duration": {
         "name": "Regendauer"
