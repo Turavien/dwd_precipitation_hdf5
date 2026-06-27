@@ -33,6 +33,35 @@
       },
       "precipitation_next_3h": {
         "name": "Niederschlag nächste 3 Std"
+      },
+      "rain_now": {
+        "name": "Regen jetzt"
+      },
+      "rain_5": {
+        "name": "Regen in 5 Min"
+      },
+      "rain_10": {
+        "name": "Regen in 10 Min"
+      },
+      "rain_15": {
+        "name": "Regen in 15 Min"
+      },
+      "rain_start": {
+        "name": "Regenbeginn"
+      },
+      "rain_end": {
+        "name": "Regenende"
+      },
+      "rain_duration": {
+        "name": "Regendauer"
+      },
+      "max_intensity": {
+        "name": "Max. Regenintensität"
+      }
+    },
+    "binary_sensor": {
+      "rain_active": {
+        "name": "Regen aktiv"
       }
     }
   }

@@ -23,11 +23,15 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+RV_RAIN_THRESHOLD = 0.1
+RV_RAIN_GAP_MINUTES = 10
+RV_RAIN_GAP_STEPS = RV_RAIN_GAP_MINUTES // 5
+
 
 class Product(ABC):
     """Base DWD radar product."""
 
-    PRODUCT_KEY = "rq"
+    PRODUCT_KEY = ""
 
     RELEASE_INTERVAL = timedelta(minutes=15)
 
@@ -92,10 +96,10 @@ class Product(ABC):
         pass
 
 
-class RadvorRQ(Product):
+class RadvorRS(Product):
     """DWD RS precipitation forecast."""
 
-    PRODUCT_KEY = "rq"
+    PRODUCT_KEY = "rs"
 
     RELEASE_INTERVAL = timedelta(minutes=5)
 
@@ -108,7 +112,7 @@ class RadvorRQ(Product):
         ts = ts.strftime("%Y%m%d_%H%M")
 
         return (
-            f"{DWD_RADVOR_URL}/"
+            f"{DWD_RADVOR_URL}/rs/"
             f"composite_rs_{ts}.tar"
         )
 
@@ -235,6 +239,192 @@ class RadvorRQ(Product):
                 )
 
         _LOGGER.error("All RS release attempts failed")
+
+
+class RadvorRV(Product):
+    """DWD RV precipitation intensity forecast."""
+
+    PRODUCT_KEY = "rv"
+
+    RELEASE_INTERVAL = timedelta(minutes=5)
+
+    RELEASE_DELAY = timedelta(minutes=5)
+
+    RELEASE_OFFSET = timedelta()
+
+    def get_url(self, ts: datetime) -> str:
+        """Return RV tar url."""
+        ts = ts.strftime("%Y%m%d_%H%M")
+
+        return (
+            f"{DWD_RADVOR_URL}/rv/"
+            f"composite_rv_{ts}.tar"
+        )
+
+    async def update(self, async_client) -> None:
+        """Update RV precipitation data."""
+
+        latest = self.get_latest_release()
+
+        release_candidates = [
+            latest,
+            latest - timedelta(minutes=5),
+            latest - timedelta(minutes=10),
+            latest - timedelta(minutes=15),
+            latest - timedelta(minutes=20),
+            latest - timedelta(minutes=25),
+            latest - timedelta(minutes=30),
+        ]
+
+        for ts in release_candidates:
+
+            try:
+
+                url = self.get_url(ts)
+
+                response = await async_get(
+                    url,
+                    async_client
+                )
+
+                tar_bytes = BytesIO(response.content)
+
+                new_data = []
+
+                with tarfile.open(fileobj=tar_bytes) as tar:
+
+                    for minute in range(0, 125, 5):
+
+                        suffix = f"{minute:03d}"
+
+                        member_name = (
+                            f"composite_rv_"
+                            f"{ts.strftime('%Y%m%d_%H%M')}_"
+                            f"{suffix}-hd5"
+                        )
+
+                        member = tar.extractfile(member_name)
+
+                        if member is None:
+                            raise ValueError(
+                                f"Missing RV member {member_name}"
+                            )
+
+                        with h5py.File(member, "r") as h5f:
+
+                            data = h5f["dataset1"]["data1"]["data"]
+
+                            raw_value = float(data[self.index])
+
+                            what = h5f["dataset1"]["data1"]["what"].attrs
+
+                            gain = float(what["gain"])
+
+                            offset = float(what["offset"])
+
+                            nodata = float(what["nodata"])
+
+                            undetect = float(what["undetect"])
+
+                            if raw_value == nodata:
+
+                                value = None
+
+                            elif raw_value == undetect:
+
+                                value = 0.0
+
+                            else:
+
+                                value = (raw_value * gain) + offset
+
+                                if value < 0:
+                                    value = 0.0
+
+                            new_data.append(
+                                0.0
+                                if value is None
+                                else value
+                            )
+
+                rain_start = None
+                rain_end = None
+
+                for i, value in enumerate(new_data):
+
+                    if value >= RV_RAIN_THRESHOLD:
+                        rain_start = i * 5
+                        break
+
+                if rain_start is not None:
+
+                    dry_steps = 0
+
+                    for i in range(rain_start // 5, len(new_data)):
+
+                        if new_data[i] < RV_RAIN_THRESHOLD:
+
+                            dry_steps += 1
+
+                            if dry_steps >= RV_RAIN_GAP_STEPS:
+
+                                rain_end = (
+                                    i
+                                    - RV_RAIN_GAP_STEPS
+                                    + 1
+                                ) * 5
+
+                                break
+
+                        else:
+
+                            dry_steps = 0
+
+                self.curr_release = ts
+
+                self.data = {
+                    "forecast": new_data,
+
+                    "rain_active": (
+                        new_data[0] >= RV_RAIN_THRESHOLD
+                    ),
+
+                    "rain_now": new_data[0],
+                    "rain_5": new_data[1],
+                    "rain_10": new_data[2],
+                    "rain_15": new_data[3],
+
+                    "rain_start": rain_start,
+                    "rain_end": rain_end,
+
+                    "rain_duration": (
+                        rain_end - rain_start
+                        if (
+                            rain_start is not None
+                            and rain_end is not None
+                        )
+                        else None
+                    ),
+
+                    "max_intensity": max(new_data),
+                }
+
+                _LOGGER.info(
+                    "RV update successful using release %s",
+                    ts
+                )
+
+                return
+
+            except Exception as err:
+
+                _LOGGER.warning(
+                    "RV release %s failed: %s",
+                    ts,
+                    err
+                )
+
+        _LOGGER.error("All RV release attempts failed")
 
 
 class RadolanProduct(Product):

@@ -3,10 +3,11 @@
 from homeassistant.const import Platform
 
 
-DOMAIN = "dwd_precipitation_hdf5"
+DOMAIN = "dwd_rainradar"
 
 PLATFORMS = [
     Platform.SENSOR,
+    Platform.BINARY_SENSOR,
 ]
 
 CONF_COORDS = "coordinates"
@@ -20,5 +21,5 @@ DWD_RADOLAN_URL = (
 )
 
 DWD_RADVOR_URL = (
-    f"{DWD_OPENDATA_URL}/weather/radar/composite/rs"
+    f"{DWD_OPENDATA_URL}/weather/radar/composite"
 )

@@ -60,41 +60,139 @@ SENSORS = (
     ),
 
     PrecipitationDescription(
-        key="radvor_rq_1h",
+        key="radvor_rs_1h",
         translation_key="precipitation_next_1h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda data:
-            data["rq"][0]
-            if data.get("rq") and len(data["rq"]) > 0
+            data["rs"][0]
+            if data.get("rs") and len(data["rs"]) > 0
             else None,
     ),
 
     PrecipitationDescription(
-        key="radvor_rq_2h",
+        key="radvor_rs_2h",
         translation_key="precipitation_next_2h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda data:
-            data["rq"][1]
-            if data.get("rq") and len(data["rq"]) > 1
+            data["rs"][1]
+            if data.get("rs") and len(data["rs"]) > 1
             else None,
     ),
 
     PrecipitationDescription(
-        key="radvor_rq_3h",
+        key="radvor_rs_3h",
         translation_key="precipitation_next_3h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda data:
-            data["rq"][2]
-            if data.get("rq") and len(data["rq"]) > 2
+            data["rs"][2]
+            if data.get("rs") and len(data["rs"]) > 2
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_now",
+        translation_key="rain_now",
+        native_unit_of_measurement="mm/h",
+        device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data:
+            data["rv"]["rain_now"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_5min",
+        translation_key="rain_5",
+        native_unit_of_measurement="mm/h",
+        device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data:
+            data["rv"]["rain_5"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_10min",
+        translation_key="rain_10",
+        native_unit_of_measurement="mm/h",
+        device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data:
+            data["rv"]["rain_10"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_15min",
+        translation_key="rain_15",
+        native_unit_of_measurement="mm/h",
+        device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data:
+            data["rv"]["rain_15"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_start",
+        translation_key="rain_start",
+        native_unit_of_measurement="min",
+        suggested_display_precision=0,
+        value_fn=lambda data:
+            data["rv"]["rain_start"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_end",
+        translation_key="rain_end",
+        native_unit_of_measurement="min",
+        suggested_display_precision=0,
+        value_fn=lambda data:
+            data["rv"]["rain_end"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_duration",
+        translation_key="rain_duration",
+        native_unit_of_measurement="min",
+        suggested_display_precision=0,
+        value_fn=lambda data:
+            data["rv"]["rain_duration"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_max",
+        translation_key="max_intensity",
+        native_unit_of_measurement="mm/h",
+        device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data:
+            data["rv"]["max_intensity"]
+            if data.get("rv")
             else None,
     ),
 
@@ -110,7 +208,7 @@ async def async_setup_entry(
     coordinator = entry.runtime_data.coordinator
 
     async_add_entities(
-        DwdPrecipitationSensor(
+        DwdRainRadarSensor(
             coordinator,
             description
         )
@@ -118,11 +216,11 @@ async def async_setup_entry(
     )
 
 
-class DwdPrecipitationSensor(
+class DwdRainRadarSensor(
     CoordinatorEntity,
     SensorEntity,
 ):
-    """Precipitation sensor."""
+    """DWD Rain Radar sensor."""
 
     _attr_has_entity_name = True
 
@@ -151,7 +249,7 @@ class DwdPrecipitationSensor(
             },
             name=(
                 coordinator.config_entry.title
-                or "DWD Precipitation"
+                or "DWD Rain Radar"
             ),
         )
 

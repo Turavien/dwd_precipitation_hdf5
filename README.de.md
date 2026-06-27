@@ -1,17 +1,15 @@
 # DWD Regenradar
 
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
-![GitHub release](https://img.shields.io/github/v/release/Turavien/dwd_precipitation_hdf5)
-![GitHub last commit](https://img.shields.io/github/last-commit/Turavien/dwd_precipitation_hdf5)
+![GitHub release](https://img.shields.io/github/v/release/Turavien/dwd_rainradar)
+![GitHub last commit](https://img.shields.io/github/last-commit/Turavien/dwd_rainradar)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-[![Open your Home Assistant instance and open the repository inside HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Turavien&repository=dwd_precipitation_hdf5)
+[![Open your Home Assistant instance and open the repository inside HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Turavien&repository=dwd_rainradar)
 
-[![Open your Home Assistant instance and start setting up a new integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=dwd_precipitation_hdf5)
+[![Open your Home Assistant instance and start setting up a new integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=dwd_rainradar)
 
 🇬🇧 English version: [README.md](README.md)
-
-# DWD Regenradar
 
 > **Hinweis**
 >
@@ -21,21 +19,25 @@
 >
 > Verwendet werden ausschließlich öffentlich verfügbare Open-Data-Produkte des DWD.
 
-Diese Custom Integration für Home Assistant stellt hochaufgelöste Niederschlagsdaten des Deutschen Wetterdienstes (DWD) bereit.
+Diese Custom Integration für Home Assistant stellt hochaufgelöste Radar- und Niederschlagsdaten des Deutschen Wetterdienstes (DWD) bereit.
 
-Die Integration entstand als Weiterentwicklung der Integration [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) von [@Hoffmann77](https://github.com/Hoffmann77), nachdem der DWD sein Datenformat auf HDF5 umgestellt hatte und DWD Precipitation dadurch zeitweise nicht mehr nutzbar war.
+Sie kombiniert historische Niederschlagsanalysen (RADOLAN) mit kurzzeitigen Niederschlagsvorhersagen (RADVOR) und stellt speziell für Home-Assistant-Automatisierungen optimierte Sensoren bereit.
 
-Im Zuge dieser Umstellung wurde der Code weitgehend überarbeitet und die bereitgestellten Entitäten an die eigenen Anforderungen angepasst, insbesondere für die automatisierte Steuerung einer Gartenbewässerung.
+Typische Einsatzgebiete sind unter anderem:
+
+* automatische Gartenbewässerung
+* Warnungen vor einsetzendem Regen bei geöffneten Fenstern
+* wetterabhängige Hausautomatisierungen
 
 > **Wichtig**
 >
-> Diese Integration liefert kumulierte Niederschlagssummen für die nächsten 1, 2 und 3 Stunden.
+> Die Vorhersagesensoren liefern die erwarteten Niederschlagssummen für die nächsten
 >
-> Die ursprüngliche Integration [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) von [@Hoffmann77](https://github.com/Hoffmann77) lieferte dagegen den **prognostizierten Niederschlagswert zu einem bestimmten zukünftigen Zeitpunkt**.
+> * 1 Stunde
+> * 2 Stunden
+> * 3 Stunden
 >
-> Die angezeigten Werte sind daher nicht direkt vergleichbar und dienen unterschiedlichen Anwendungszwecken.
->
-> Bitte prüfen Sie, ob dieses Verhalten zu Ihrem gewünschten Einsatzzweck passt.
+> Die Werte geben also an, wie viel Niederschlag innerhalb dieses Zeitraums voraussichtlich insgesamt fallen wird.
 
 ## Funktionsweise
 
@@ -49,25 +51,53 @@ Die Integration nutzt:
 
 * RADOLAN RW
 * RADOLAN SF
-* RADVOR RQ
+* RADVOR RS
+* RADVOR RV
 
 und stellt folgende Werte bereit:
 
 * Gesamtniederschlag der letzten Stunde [mm]
 * Gesamtniederschlag der letzten 24 Stunden [mm]
-* Kumulierte Niederschlagsvorhersage für die nächste Stunde [mm]
-* Kumulierte Niederschlagsvorhersage für die nächsten 2 Stunden [mm]
-* Kumulierte Niederschlagsvorhersage für die nächsten 3 Stunden [mm]
+
+* erwarteter Niederschlag innerhalb der nächsten Stunde [mm]
+* erwarteter Niederschlag innerhalb der nächsten 2 Stunden [mm]
+* erwarteter Niederschlag innerhalb der nächsten 3 Stunden [mm]
+
+* aktuelle Niederschlagsintensität [mm/h]
+* erwartete Niederschlagsintensität in 5 Minuten [mm/h]
+* erwartete Niederschlagsintensität in 10 Minuten [mm/h]
+* erwartete Niederschlagsintensität in 15 Minuten [mm/h]
+* Regenbeginn des nächsten Niederschlagsereignisses [min]
+* Regenende des nächsten Niederschlagsereignisses [min]
+* Regendauer des nächsten Niederschlagsereignisses [min]
+* maximale Niederschlagsintensität des nächsten Niederschlagsereignisses [mm/h]
+* Binary Sensor „Regen aktiv“
 
 ## Besonderheiten
 
-Die Integration verwendet das offizielle RADVOR-RS-Vorhersageprodukt des Deutschen Wetterdienstes.
+Die Integration kombiniert mehrere offizielle Radarprodukte des Deutschen Wetterdienstes.
 
-Jede RS-Datei enthält die erwartete Niederschlagssumme für ein Vorhersagefenster von einer Stunde.
+Je nach Sensor werden entweder
 
-Daraus werden kumulierte Niederschlagssummen über einen Vorhersagehorizont von bis zu 3 Stunden berechnet.
+* gemessene Niederschlagssummen,
+* prognostizierte Niederschlagssummen oder
+* Niederschlagsintensitäten
 
-Die Werte werden als erwartete Niederschlagssummen in Millimetern [mm] bereitgestellt und eignen sich daher besonders für Anwendungen wie die automatische Gartenbewässerung.
+bereitgestellt.
+
+Die Vorhersagesummen basieren auf dem RADVOR-RS-Produkt und liefern die erwarteten Niederschlagsmengen für die nächsten 1 bis 3 Stunden.
+
+Die Niederschlagsintensitäten basieren auf dem RADVOR-RV-Produkt und ermöglichen zusätzlich die Erkennung zusammenhängender Niederschlagsereignisse.
+
+Hieraus werden folgende Ereignissensoren abgeleitet:
+
+* Regen aktiv
+* Regenbeginn
+* Regenende
+* Regendauer
+* maximale Niederschlagsintensität des Niederschlagsereignisses
+
+Dadurch eignet sich die Integration sowohl für Bewässerungssteuerungen als auch für Warnungen vor geöffneten Fenstern oder andere zeitkritische wetterabhängige Automatisierungen.
 
 Die Integration funktioniert nur innerhalb Deutschlands sowie in grenznahen Bereichen, für die DWD-Radardaten verfügbar sind.
 
@@ -77,9 +107,13 @@ Koordinaten außerhalb des verfügbaren DWD-Radargebietes werden bereits bei der
 
 Alle Daten stammen vom Deutschen Wetterdienst (DWD).
 
-### RADVOR RQ
+### RADVOR RS
 
-Radarbasierte Niederschlagsvorhersage mit hoher zeitlicher und räumlicher Auflösung.
+Radarbasierte Vorhersage der erwarteten Niederschlagssummen für jeweils ein einstündiges Vorhersagefenster.
+
+### RADVOR RV
+
+Radarbasierte Vorhersage der Niederschlagsintensität im 5-Minuten-Raster.
 
 ### RADOLAN RW
 
@@ -98,11 +132,16 @@ Radarbasierte Niederschlagsanalyse der letzten 24 Stunden.
 5. Integration installieren
 6. Home Assistant neu starten
 
-## Lizenz und Hinweise
+## Projektgeschichte
 
-Die ursprüngliche Integration wurde von [@Hoffmann77](https://github.com/Hoffmann77) veröffentlicht.
-Diese Version wurde technisch umfassend und grundlegend überarbeitet und an die aktuelle Struktur der DWD-RADVOR-Daten angepasst.
+Dieses Projekt entstand ursprünglich als Weiterentwicklung der Integration [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) von [@Hoffmann77](https://github.com/Hoffmann77).
+
+Nachdem der Deutsche Wetterdienst seine Radarprodukte auf HDF5 umgestellt hatte, wurde die ursprüngliche Integration zunächst angepasst und anschließend eigenständig weiterentwickelt.
+
+Der ursprüngliche Ansatz bildet weiterhin die Grundlage des Projekts, während Architektur, Datenverarbeitung und Funktionsumfang inzwischen in weiten Teilen neu implementiert wurden.
+
+## Lizenz und Hinweise
 
 Teile der Radarverarbeitung basieren auf Komponenten des wradlib-Projektes.
 Die wradlib-Lizenz befindet sich unter:
-custom_components/dwd_precipitation_hdf5/radar/LICENSE.txt
+custom_components/dwd_rainradar/radar/LICENSE.txt
