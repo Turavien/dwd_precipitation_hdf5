@@ -35,16 +35,19 @@
         "name": "Niederschlag nächste 3 Std"
       },
       "rain_now": {
-        "name": "Regen jetzt"
+        "name": "Regenintensität jetzt"
       },
       "rain_5": {
-        "name": "Regen in 5 Min"
+        "name": "Regenintensität in 5 Min"
       },
       "rain_10": {
-        "name": "Regen in 10 Min"
+        "name": "Regenintensität in 10 Min"
       },
       "rain_15": {
-        "name": "Regen in 15 Min"
+        "name": "Regenintensität in 15 Min"
+      },
+      "max_intensity": {
+        "name": "Max. Regenintensität Ereignis"
       },
       "rain_start": {
         "name": "Regenbeginn"
@@ -54,9 +57,6 @@
       },
       "rain_duration": {
         "name": "Regendauer"
-      },
-      "max_intensity": {
-        "name": "Max. Regenintensität"
       }
     },
     "binary_sensor": {

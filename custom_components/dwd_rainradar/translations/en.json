@@ -35,16 +35,19 @@
         "name": "Precipitation next 3h"
       },
       "rain_now": {
-        "name": "Rain now"
+        "name": "Rain intensity now"
       },
       "rain_5": {
-        "name": "Rain in 5 min"
+        "name": "Rain intensity in 5 min"
       },
       "rain_10": {
-        "name": "Rain in 10 min"
+        "name": "Rain intensity in 10 min"
       },
       "rain_15": {
-        "name": "Rain in 15 min"
+        "name": "Rain intensity in 15 min"
+      },
+      "max_intensity": {
+        "name": "Max. rain intensity (event)"
       },
       "rain_start": {
         "name": "Rain starts"
@@ -54,9 +57,6 @@
       },
       "rain_duration": {
         "name": "Rain duration"
-      },
-      "max_intensity": {
-        "name": "Max. rain intensity"
       }
     },
     "binary_sensor": {
