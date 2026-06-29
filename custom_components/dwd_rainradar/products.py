@@ -28,6 +28,73 @@ RV_RAIN_GAP_MINUTES = 10
 RV_RAIN_GAP_STEPS = RV_RAIN_GAP_MINUTES // 5
 
 
+def _extract_rain_events(
+    forecast: list[float],
+) -> list[dict]:
+    """Extract continuous rain events from a forecast."""
+
+    events = []
+
+    start = None
+    peak = 0.0
+    peak_index = None
+    dry_steps = 0
+
+    for index, value in enumerate(forecast):
+
+        if value >= RV_RAIN_THRESHOLD:
+
+            if start is None:
+
+                start = index
+                peak = value
+                peak_index = index
+
+            elif value > peak:
+
+                peak = value
+                peak_index = index
+
+            dry_steps = 0
+
+        elif start is not None:
+
+            dry_steps += 1
+
+            if dry_steps >= RV_RAIN_GAP_STEPS:
+
+                end = index - RV_RAIN_GAP_STEPS
+
+                events.append(
+                    {
+                        "start": start * 5,
+                        "end": end * 5,
+                        "duration": (end - start) * 5,
+                        "peak": peak,
+                        "peak_at": peak_index * 5,
+                    }
+                )
+
+                start = None
+                peak = 0.0
+                peak_index = None
+                dry_steps = 0
+
+    if start is not None:
+
+        events.append(
+            {
+                "start": start * 5,
+                "end": None,
+                "duration": None,
+                "peak": peak,
+                "peak_at": peak_index * 5,
+            }
+        )
+
+    return events
+
+
 class Product(ABC):
     """Base DWD radar product."""
 
