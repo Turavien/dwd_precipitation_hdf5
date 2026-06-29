@@ -196,6 +196,41 @@ SENSORS = (
             else None,
     ),
 
+    PrecipitationDescription(
+        key="radvor_rv_max_at",
+        translation_key="max_intensity_at",
+        native_unit_of_measurement="min",
+        suggested_display_precision=0,
+        value_fn=lambda data:
+            data["rv"]["max_intensity_at"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_forecast_max",
+        translation_key="forecast_max_intensity",
+        native_unit_of_measurement="mm/h",
+        device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data:
+            data["rv"]["forecast_max_intensity"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_forecast_max_at",
+        translation_key="forecast_max_intensity_at",
+        native_unit_of_measurement="min",
+        suggested_display_precision=0,
+        value_fn=lambda data:
+            data["rv"]["forecast_max_intensity_at"]
+            if data.get("rv")
+            else None,
+    ),
+
 )
 
 async def async_setup_entry(

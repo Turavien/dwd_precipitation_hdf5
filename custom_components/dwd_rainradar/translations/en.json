@@ -47,7 +47,16 @@
         "name": "Rain intensity in 15 min"
       },
       "max_intensity": {
-        "name": "Max. rain intensity (event)"
+        "name": "Max. rain intensity (next event)"
+      },
+      "max_intensity_at": {
+        "name": "Max. rain intensity in"
+      },
+      "forecast_max_intensity": {
+        "name": "Max. rain intensity (forecast)"
+      },
+      "forecast_max_intensity_at": {
+        "name": "Max. rain intensity (forecast) in"
       },
       "rain_start": {
         "name": "Rain starts"

@@ -47,7 +47,16 @@
         "name": "Regenintensität in 15 Min"
       },
       "max_intensity": {
-        "name": "Max. Regenintensität Ereignis"
+        "name": "Max. Regenintensität (nächstes Ereignis)"
+      },
+      "max_intensity_at": {
+        "name": "Max. Regenintensität in"
+      },
+      "forecast_max_intensity": {
+        "name": "Max. Regenintensität (Vorhersage)"
+      },
+      "forecast_max_intensity_at": {
+        "name": "Max. Regenintensität (Vorhersage) in"
       },
       "rain_start": {
         "name": "Beginn Regen"
