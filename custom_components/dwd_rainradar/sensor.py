@@ -24,6 +24,8 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 
+from datetime import datetime
+
 from .const import DOMAIN
 from .coordinator import UpdateCoordinator
 
@@ -34,7 +36,7 @@ class PrecipitationDescription(
 ):
     """Sensor description."""
 
-    value_fn: Callable[[dict], float | None]
+    value_fn: Callable[[dict], float | datetime | None]
 
 
 SENSORS = (
@@ -162,12 +164,32 @@ SENSORS = (
     ),
 
     PrecipitationDescription(
+        key="radvor_rv_start_time",
+        translation_key="rain_start_time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda data:
+            data["rv"]["rain_start_time"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
         key="radvor_rv_end",
         translation_key="rain_end",
         native_unit_of_measurement="min",
         suggested_display_precision=0,
         value_fn=lambda data:
             data["rv"]["rain_end"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_end_time",
+        translation_key="rain_end_time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda data:
+            data["rv"]["rain_end_time"]
             if data.get("rv")
             else None,
     ),
@@ -208,6 +230,16 @@ SENSORS = (
     ),
 
     PrecipitationDescription(
+        key="radvor_rv_max_time",
+        translation_key="max_intensity_time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda data:
+            data["rv"]["max_intensity_time"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
         key="radvor_rv_forecast_max",
         translation_key="forecast_max_intensity",
         native_unit_of_measurement="mm/h",
@@ -227,6 +259,16 @@ SENSORS = (
         suggested_display_precision=0,
         value_fn=lambda data:
             data["rv"]["forecast_max_intensity_at"]
+            if data.get("rv")
+            else None,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_forecast_max_time",
+        translation_key="forecast_max_intensity_time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda data:
+            data["rv"]["forecast_max_intensity_time"]
             if data.get("rv")
             else None,
     ),
@@ -300,5 +342,8 @@ class DwdRainRadarSensor(
 
         if value is None:
             return None
+
+        if isinstance(value, datetime):
+            return value
 
         return round(value, 1)

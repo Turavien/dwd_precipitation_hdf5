@@ -20,19 +20,19 @@
   "entity": {
     "sensor": {
       "precipitation_last_1h": {
-        "name": "Niederschlag letzte 1 Std"
+        "name": "Niederschlagsmenge letzte 1 Std"
       },
       "precipitation_last_24h": {
-        "name": "Niederschlag letzte 24 Std"
+        "name": "Niederschlagsmenge letzte 24 Std"
       },
       "precipitation_next_1h": {
-        "name": "Niederschlag nächste 1 Std"
+        "name": "Niederschlagsmenge nächste 1 Std"
       },
       "precipitation_next_2h": {
-        "name": "Niederschlag nächste 2 Std"
+        "name": "Niederschlagsmenge nächste 2 Std"
       },
       "precipitation_next_3h": {
-        "name": "Niederschlag nächste 3 Std"
+        "name": "Niederschlagsmenge nächste 3 Std"
       },
       "rain_now": {
         "name": "Regenintensität jetzt"
@@ -50,27 +50,39 @@
         "name": "Max. Regenintensität (nächstes Ereignis)"
       },
       "max_intensity_at": {
-        "name": "Max. Regenintensität in"
+        "name": "Max. Regenintensität (nächstes Ereignis) in"
+      },
+      "max_intensity_time": {
+        "name": "Max. Regenintensität (nächstes Ereignis) um"
       },
       "forecast_max_intensity": {
-        "name": "Max. Regenintensität (Vorhersage)"
+        "name": "Max. Regenintensität (nächste 3 Std)"
       },
       "forecast_max_intensity_at": {
-        "name": "Max. Regenintensität (Vorhersage) in"
+        "name": "Max. Regenintensität (nächste 3 Std) in"
+      },
+      "forecast_max_intensity_time": {
+        "name": "Max. Regenintensität (nächste 3 Std) um"
       },
       "rain_start": {
-        "name": "Beginn Regen"
+        "name": "nächster Regenbeginn in"
+      },
+      "rain_start_time": {
+        "name": "nächster Regenbeginn um"
       },
       "rain_end": {
-        "name": "Ende Regen"
+        "name": "nächstes Regenende in"
+      },
+      "rain_end_time": {
+        "name": "nächstes Regenende um"
       },
       "rain_duration": {
-        "name": "Regendauer"
+        "name": "nächste Regendauer"
       }
     },
     "binary_sensor": {
       "rain_active": {
-        "name": "Regen aktiv"
+        "name": "Es regnet aktuell"
       }
     }
   }

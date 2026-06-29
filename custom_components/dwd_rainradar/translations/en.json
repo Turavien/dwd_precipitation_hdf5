@@ -50,27 +50,39 @@
         "name": "Max. rain intensity (next event)"
       },
       "max_intensity_at": {
-        "name": "Max. rain intensity in"
+        "name": "Time until max. rain intensity (next event)"
+      },
+      "max_intensity_time": {
+        "name": "Time of max. rain intensity (next event)"
       },
       "forecast_max_intensity": {
-        "name": "Max. rain intensity (forecast)"
+        "name": "Max. rain intensity (next 3 hours)"
       },
       "forecast_max_intensity_at": {
-        "name": "Max. rain intensity (forecast) in"
+        "name": "Time until max. rain intensity (next 3 hours)"
+      },
+      "forecast_max_intensity_time": {
+        "name": "Max. rain intensity (next 3 hours) at"
       },
       "rain_start": {
-        "name": "Rain starts"
+        "name": "Time until next rain"
+      },
+      "rain_start_time": {
+        "name": "Next rain starts at"
       },
       "rain_end": {
-        "name": "Rain ends"
+        "name": "Time until next rain ends"
+      },
+      "rain_end_time": {
+        "name": "Next rain ends at"
       },
       "rain_duration": {
-        "name": "Rain duration"
+        "name": "Next rain duration"
       }
     },
     "binary_sensor": {
       "rain_active": {
-        "name": "Rain active"
+        "name": "currently raining"
       }
     }
   }

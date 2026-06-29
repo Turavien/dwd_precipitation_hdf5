@@ -69,7 +69,7 @@ def _extract_rain_events(
                     {
                         "start": start * 5,
                         "end": end * 5,
-                        "duration": (end - start) * 5,
+                        "duration": (end - start + 1) * 5,
                         "peak": peak,
                         "peak_at": peak_index * 5,
                         "open": False,
@@ -89,7 +89,7 @@ def _extract_rain_events(
             {
                 "start": start * 5,
                 "end": end * 5,
-                "duration": (end - start) * 5,
+                "duration": (end - start + 1) * 5,
                 "peak": peak,
                 "peak_at": peak_index * 5,
                 "open": True,
@@ -428,6 +428,13 @@ class RadvorRV(Product):
 
                 self.curr_release = ts
 
+                release_time = dt_util.as_local(ts)
+
+                forecast_max = max(new_data)
+                forecast_max_index = new_data.index(
+                    forecast_max
+                )
+
                 self.data = {
                     "forecast": new_data,
 
@@ -448,15 +455,42 @@ class RadvorRV(Product):
                         else None
                     ),
 
+                    "rain_start_time": (
+                        release_time
+                        + timedelta(
+                            minutes=next_event["start"]
+                        )
+                        if next_event
+                        else None
+                    ),
+
                     "rain_end": (
                         next_event["end"]
-                        if next_event
+                        if (
+                            next_event
+                            and not next_event["open"]
+                        )
+                        else None
+                    ),
+
+                    "rain_end_time": (
+                        release_time
+                        + timedelta(
+                            minutes=next_event["end"]
+                        )
+                        if (
+                            next_event
+                            and not next_event["open"]
+                        )
                         else None
                     ),
 
                     "rain_duration": (
                         next_event["duration"]
-                        if next_event
+                        if (
+                            next_event
+                            and not next_event["open"]
+                        )
                         else None
                     ),
 
@@ -472,16 +506,28 @@ class RadvorRV(Product):
                         else None
                     ),
 
+                    "max_intensity_time": (
+                        release_time
+                        + timedelta(
+                            minutes=next_event["peak_at"]
+                        )
+                        if next_event
+                        else None
+                    ),
+
                     "forecast_max_intensity": (
-                        max(new_data)
-                        if new_data
-                        else 0.0
+                        forecast_max
                     ),
 
                     "forecast_max_intensity_at": (
-                        new_data.index(max(new_data)) * 5
-                        if new_data
-                        else None
+                        forecast_max_index * 5
+                    ),
+
+                    "forecast_max_intensity_time": (
+                        release_time
+                        + timedelta(
+                            minutes=forecast_max_index * 5
+                        )
                     ),
                 }
 
