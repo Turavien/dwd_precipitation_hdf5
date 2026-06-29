@@ -72,6 +72,7 @@ def _extract_rain_events(
                         "duration": (end - start) * 5,
                         "peak": peak,
                         "peak_at": peak_index * 5,
+                        "open": False,
                     }
                 )
 
@@ -82,13 +83,16 @@ def _extract_rain_events(
 
     if start is not None:
 
+        end = len(forecast) - 1
+
         events.append(
             {
                 "start": start * 5,
-                "end": None,
-                "duration": None,
+                "end": end * 5,
+                "duration": (end - start) * 5,
                 "peak": peak,
                 "peak_at": peak_index * 5,
+                "open": True,
             }
         )
 
@@ -414,43 +418,20 @@ class RadvorRV(Product):
                                 else value
                             )
 
-                rain_start = None
-                rain_end = None
+                events = _extract_rain_events(new_data)
 
-                for i, value in enumerate(new_data):
-
-                    if value >= RV_RAIN_THRESHOLD:
-                        rain_start = i * 5
-                        break
-
-                if rain_start is not None:
-
-                    dry_steps = 0
-
-                    for i in range(rain_start // 5, len(new_data)):
-
-                        if new_data[i] < RV_RAIN_THRESHOLD:
-
-                            dry_steps += 1
-
-                            if dry_steps >= RV_RAIN_GAP_STEPS:
-
-                                rain_end = (
-                                    i
-                                    - RV_RAIN_GAP_STEPS
-                                    + 1
-                                ) * 5
-
-                                break
-
-                        else:
-
-                            dry_steps = 0
+                next_event = (
+                    events[0]
+                    if events
+                    else None
+                )
 
                 self.curr_release = ts
 
                 self.data = {
                     "forecast": new_data,
+
+                    "events": events,
 
                     "rain_active": (
                         new_data[0] >= RV_RAIN_THRESHOLD
@@ -461,19 +442,47 @@ class RadvorRV(Product):
                     "rain_10": new_data[2],
                     "rain_15": new_data[3],
 
-                    "rain_start": rain_start,
-                    "rain_end": rain_end,
-
-                    "rain_duration": (
-                        rain_end - rain_start
-                        if (
-                            rain_start is not None
-                            and rain_end is not None
-                        )
+                    "rain_start": (
+                        next_event["start"]
+                        if next_event
                         else None
                     ),
 
-                    "max_intensity": max(new_data),
+                    "rain_end": (
+                        next_event["end"]
+                        if next_event
+                        else None
+                    ),
+
+                    "rain_duration": (
+                        next_event["duration"]
+                        if next_event
+                        else None
+                    ),
+
+                    "max_intensity": (
+                        next_event["peak"]
+                        if next_event
+                        else 0.0
+                    ),
+
+                    "max_intensity_at": (
+                        next_event["peak_at"]
+                        if next_event
+                        else None
+                    ),
+
+                    "forecast_max_intensity": (
+                        max(new_data)
+                        if new_data
+                        else 0.0
+                    ),
+
+                    "forecast_max_intensity_at": (
+                        new_data.index(max(new_data)) * 5
+                        if new_data
+                        else None
+                    ),
                 }
 
                 _LOGGER.info(
