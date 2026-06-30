@@ -430,9 +430,20 @@ class RadvorRV(Product):
 
                 release_time = dt_util.as_local(ts)
 
-                forecast_max = max(new_data)
-                forecast_max_index = new_data.index(
-                    forecast_max
+                forecast_start = (
+                    release_time
+                    + timedelta(minutes=5)
+                )
+
+                forecast_data = new_data[1:]
+
+                forecast_max = max(forecast_data)
+
+                forecast_max_index = (
+                    forecast_data.index(
+                        forecast_max
+                    )
+                    + 1
                 )
 
                 self.data = {
@@ -456,7 +467,7 @@ class RadvorRV(Product):
                     ),
 
                     "rain_start_time": (
-                        release_time
+                        forecast_start
                         + timedelta(
                             minutes=next_event["start"]
                         )
@@ -474,7 +485,7 @@ class RadvorRV(Product):
                     ),
 
                     "rain_end_time": (
-                        release_time
+                        forecast_start
                         + timedelta(
                             minutes=next_event["end"]
                         )
@@ -507,7 +518,7 @@ class RadvorRV(Product):
                     ),
 
                     "max_intensity_time": (
-                        release_time
+                        forecast_start
                         + timedelta(
                             minutes=next_event["peak_at"]
                         )
@@ -524,7 +535,7 @@ class RadvorRV(Product):
                     ),
 
                     "forecast_max_intensity_time": (
-                        release_time
+                        forecast_start
                         + timedelta(
                             minutes=forecast_max_index * 5
                         )
