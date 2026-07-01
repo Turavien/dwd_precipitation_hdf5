@@ -439,12 +439,31 @@ class RadvorRV(Product):
 
                 forecast_max = max(forecast_data)
 
-                forecast_max_index = (
-                    forecast_data.index(
-                        forecast_max
+                if forecast_max > 0:
+
+                    forecast_max_index = (
+                        forecast_data.index(
+                            forecast_max
+                        )
+                        + 1
                     )
-                    + 1
-                )
+
+                    forecast_max_time = (
+                        forecast_start
+                        + timedelta(
+                            minutes=forecast_max_index * 5
+                        )
+                    )
+
+                    forecast_max_at = (
+                        forecast_max_index * 5
+                    )
+
+                else:
+
+                    forecast_max_index = None
+                    forecast_max_time = None
+                    forecast_max_at = None
 
                 self.data = {
                     "forecast": new_data,
@@ -531,14 +550,11 @@ class RadvorRV(Product):
                     ),
 
                     "forecast_max_intensity_at": (
-                        forecast_max_index * 5
+                        forecast_max_at
                     ),
 
                     "forecast_max_intensity_time": (
-                        forecast_start
-                        + timedelta(
-                            minutes=forecast_max_index * 5
-                        )
+                        forecast_max_time
                     ),
                 }
 
