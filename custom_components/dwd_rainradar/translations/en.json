@@ -20,69 +20,60 @@
   "entity": {
     "sensor": {
       "precipitation_last_1h": {
-        "name": "Precipitation last 1h"
+        "name": "Amount last 1h"
+      },
+      "precipitation_last_2h": {
+        "name": "Amount last 2h (rolling)"
+      },
+      "precipitation_last_3h": {
+        "name": "Amount last 3h (rolling)"
+      },
+      "precipitation_last_6h": {
+        "name": "Amount last 6h (rolling)"
+      },
+      "precipitation_last_12h": {
+        "name": "Amount last 12h (rolling)"
       },
       "precipitation_last_24h": {
-        "name": "Precipitation last 24h"
+        "name": "Amount last 24h"
       },
       "precipitation_next_1h": {
-        "name": "Precipitation next 1h"
+        "name": "Expected amount next 1h"
       },
       "precipitation_next_2h": {
-        "name": "Precipitation next 2h"
+        "name": "Expected amount next 2h"
       },
       "precipitation_next_3h": {
-        "name": "Precipitation next 3h"
+        "name": "Expected amount next 3h"
       },
-      "rain_now": {
-        "name": "Rain intensity now"
+      "intensity_now": {
+        "name": "Current intensity"
       },
-      "rain_5": {
-        "name": "Rain intensity in 5 min"
+      "intensity_in_5min": {
+        "name": "Expected intensity in 5min"
       },
-      "rain_10": {
-        "name": "Rain intensity in 10 min"
+      "intensity_in_10min": {
+        "name": "Expected intensity in 10min"
       },
-      "rain_15": {
-        "name": "Rain intensity in 15 min"
+      "intensity_in_15min": {
+        "name": "Expected intensity in 15min"
       },
       "max_intensity": {
-        "name": "Max. rain intensity (next event)"
+        "name": "Expected max. intensity"
       },
       "max_intensity_at": {
-        "name": "Time until max. rain intensity (next event)"
+        "name": "Expected max. intensity in"
       },
-      "max_intensity_time": {
-        "name": "Time of max. rain intensity (next event)"
+      "precipitation_start": {
+        "name": "Expected precipitation in"
       },
-      "forecast_max_intensity": {
-        "name": "Max. rain intensity (next 3 hours)"
-      },
-      "forecast_max_intensity_at": {
-        "name": "Time until max. rain intensity (next 3 hours)"
-      },
-      "forecast_max_intensity_time": {
-        "name": "Max. rain intensity (next 3 hours) at"
-      },
-      "rain_start": {
-        "name": "Time until next rain"
-      },
-      "rain_start_time": {
-        "name": "Next rain starts at"
-      },
-      "rain_end": {
-        "name": "Time until next rain ends"
-      },
-      "rain_end_time": {
-        "name": "Next rain ends at"
-      },
-      "rain_duration": {
-        "name": "Next rain duration"
+      "precipitation_duration": {
+        "name": "Expected precipitation for"
       }
     },
     "binary_sensor": {
-      "rain_active": {
-        "name": "currently raining"
+      "precipitation_active": {
+        "name": "Current precipitation"
       }
     }
   }

@@ -40,9 +40,9 @@ BINARY_SENSORS = (
 
     RainBinarySensorDescription(
         key="radvor_rv_active",
-        translation_key="rain_active",
+        translation_key="precipitation_active",
         value_fn=lambda data:
-            data["rv"]["rain_active"]
+            data["rv"]["precipitation_active"]
             if data.get("rv")
             else False,
     ),
