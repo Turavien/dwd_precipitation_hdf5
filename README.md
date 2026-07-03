@@ -39,6 +39,13 @@ Typical use cases include:
 >
 > Each value represents the total amount of precipitation expected to fall during the corresponding forecast period.
 
+## What's new in Version 2.2.0
+
+* Simplified and more intuitive sensor set
+* Added calculated rolling precipitation totals (2 h, 3 h, 6 h and 12 h)
+* Improved sensor names and translations
+* Improved internal architecture and code quality
+
 ## How it works
 
 The integration is based on official DWD radar products.
@@ -57,6 +64,10 @@ The integration uses:
 and provides:
 
 * Total precipitation during the last hour [mm]
+* Calculated rolling precipitation during the last 2 hours [mm]
+* Calculated rolling precipitation during the last 3 hours [mm]
+* Calculated rolling precipitation during the last 6 hours [mm]
+* Calculated rolling precipitation during the last 12 hours [mm]
 * Total precipitation during the last 24 hours [mm]
 
 * Expected precipitation during the next hour [mm]
@@ -67,11 +78,14 @@ and provides:
 * Expected precipitation intensity in 5 minutes [mm/h]
 * Expected precipitation intensity in 10 minutes [mm/h]
 * Expected precipitation intensity in 15 minutes [mm/h]
-* Start of the next precipitation event [min]
-* End of the next precipitation event [min]
-* Duration of the next precipitation event [min]
-* Maximum precipitation intensity during the next precipitation event [mm/h]
-* Binary sensor "Rain active"
+
+* Expected precipitation starts in [min]
+* Expected precipitation duration [min]
+
+* Expected maximum precipitation intensity [mm/h]
+* Expected maximum precipitation intensity in [min]
+
+* Binary sensor "Precipitation active"
 
 ## Special features
 
@@ -87,13 +101,13 @@ Forecast totals are based on the RADVOR RS product and provide the expected prec
 
 Precipitation intensities are based on the RADVOR RV product and additionally allow the detection of continuous precipitation events.
 
-The following event-based sensors are derived from these data:
+The following derived sensors are calculated from these data:
 
-* Rain active
-* Rain starts
-* Rain ends
-* Rain duration
-* Maximum precipitation intensity during the precipitation event
+* Precipitation active
+* Expected precipitation start
+* Expected precipitation duration
+* Expected maximum precipitation intensity
+* Calculated rolling precipitation totals (2 h, 3 h, 6 h and 12 h)
 
 This makes the integration suitable for both automated irrigation systems and time-critical weather-based automations such as open-window rain warnings.
 

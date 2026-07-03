@@ -39,6 +39,13 @@ Typische Einsatzgebiete sind unter anderem:
 >
 > Die Werte geben also an, wie viel Niederschlag innerhalb dieses Zeitraums voraussichtlich insgesamt fallen wird.
 
+## Neu in Version 2.2.0
+
+* Vereinfachte und übersichtlichere Sensorstruktur
+* Berechnete Niederschlagssummen für 2 h, 3 h, 6 h und 12 h
+* Überarbeitete Sensorbezeichnungen und Übersetzungen
+* Verbesserte interne Architektur und Codequalität
+
 ## Funktionsweise
 
 Die Daten basieren auf den offiziellen Radarprodukten des Deutschen Wetterdienstes.
@@ -57,21 +64,28 @@ Die Integration nutzt:
 und stellt folgende Werte bereit:
 
 * Gesamtniederschlag der letzten Stunde [mm]
+* Berechneter Niederschlag der letzten 2 Stunden [mm]
+* Berechneter Niederschlag der letzten 3 Stunden [mm]
+* Berechneter Niederschlag der letzten 6 Stunden [mm]
+* Berechneter Niederschlag der letzten 12 Stunden [mm]
 * Gesamtniederschlag der letzten 24 Stunden [mm]
 
-* erwarteter Niederschlag innerhalb der nächsten Stunde [mm]
-* erwarteter Niederschlag innerhalb der nächsten 2 Stunden [mm]
-* erwarteter Niederschlag innerhalb der nächsten 3 Stunden [mm]
+* Erwarteter Niederschlag innerhalb der nächsten Stunde [mm]
+* Erwarteter Niederschlag innerhalb der nächsten 2 Stunden [mm]
+* Erwarteter Niederschlag innerhalb der nächsten 3 Stunden [mm]
 
-* aktuelle Niederschlagsintensität [mm/h]
-* erwartete Niederschlagsintensität in 5 Minuten [mm/h]
-* erwartete Niederschlagsintensität in 10 Minuten [mm/h]
-* erwartete Niederschlagsintensität in 15 Minuten [mm/h]
-* Regenbeginn des nächsten Niederschlagsereignisses [min]
-* Regenende des nächsten Niederschlagsereignisses [min]
-* Regendauer des nächsten Niederschlagsereignisses [min]
-* maximale Niederschlagsintensität des nächsten Niederschlagsereignisses [mm/h]
-* Binary Sensor „Regen aktiv“
+* Aktuelle Niederschlagsintensität [mm/h]
+* Erwartete Niederschlagsintensität in 5 Minuten [mm/h]
+* Erwartete Niederschlagsintensität in 10 Minuten [mm/h]
+* Erwartete Niederschlagsintensität in 15 Minuten [mm/h]
+
+* Erwarteter Niederschlag beginnt in [min]
+* Erwartete Niederschlagsdauer [min]
+
+* Erwartete maximale Niederschlagsintensität [mm/h]
+* Erwartete maximale Niederschlagsintensität in [min]
+
+* Binary Sensor „Niederschlag aktiv“
 
 ## Besonderheiten
 
@@ -89,13 +103,13 @@ Die Vorhersagesummen basieren auf dem RADVOR-RS-Produkt und liefern die erwartet
 
 Die Niederschlagsintensitäten basieren auf dem RADVOR-RV-Produkt und ermöglichen zusätzlich die Erkennung zusammenhängender Niederschlagsereignisse.
 
-Hieraus werden folgende Ereignissensoren abgeleitet:
+Hieraus werden folgende abgeleitete Sensoren berechnet:
 
-* Regen aktiv
-* Regenbeginn
-* Regenende
-* Regendauer
-* maximale Niederschlagsintensität des Niederschlagsereignisses
+* Niederschlag aktiv
+* erwarteter Niederschlagsbeginn
+* erwartete Niederschlagsdauer
+* erwartete maximale Niederschlagsintensität
+* berechnete Niederschlagssummen der letzten 2 h, 3 h, 6 h und 12 h
 
 Dadurch eignet sich die Integration sowohl für Bewässerungssteuerungen als auch für Warnungen vor geöffneten Fenstern oder andere zeitkritische wetterabhängige Automatisierungen.
 
