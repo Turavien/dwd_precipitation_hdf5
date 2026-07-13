@@ -9,12 +9,38 @@
           "name": "Name",
           "coordinates": "Koordinaten"
         }
+      },
+      "sensor_groups": {
+        "title": "Sensorgruppen auswählen",
+        "description": "Wähle aus, welche Sensorgruppen angelegt werden sollen.\n\nHinweis: Die rollierenden Niederschlagssummen werden aus den stündlichen RADOLAN-Daten berechnet. Diese Sensoren stehen daher erst nach bis zu 12 Stunden vollständig zur Verfügung.",
+        "data": {
+          "sensor_groups": "Sensorgruppen"
+        }
+      },
+      "init": {
+        "title": "Sensorgruppen",
+        "data": {
+          "sensor_groups": "Sensorgruppen"
+        },
+        "description": "Hinweis: Rollierende Niederschlagssummen benötigen bis zu 12 Stunden historische Daten."
       }
     },
     "error": {
       "invalid_name": "Ungültiger Name",
       "invalid_coordinates": "Ungültige Koordinaten",
       "outside_dwd_coverage": "Standort liegt außerhalb des DWD-Radargebiets"
+    }
+  },
+
+  "selector": {
+    "sensor_groups": {
+      "options": {
+        "current": "Aktuelle Niederschläge",
+        "event": "Niederschlagsereignis",
+        "forecast": "Vorhersagemengen",
+        "history": "Historische Mengen",
+        "rolling": "Rollierende Mengen"
+      }
     }
   },
   "entity": {
@@ -58,17 +84,8 @@
       "intensity_in_15min": {
         "name": "erwartete Intensität in 15 Min"
       },
-      "max_intensity": {
-        "name": "erwartete max. Intensität"
-      },
-      "max_intensity_at": {
-        "name": "erwartete max. Intensität in"
-      },
       "precipitation_start": {
         "name": "erwarteter Niederschlag in"
-      },
-      "precipitation_duration": {
-        "name": "erwartete Niederschlagsdauer"
       }
     },
     "binary_sensor": {

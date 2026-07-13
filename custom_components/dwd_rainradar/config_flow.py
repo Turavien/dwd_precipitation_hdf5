@@ -6,16 +6,109 @@ import logging
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 from homeassistant.const import CONF_NAME
 
-from .const import DOMAIN, CONF_COORDS
+from .const import (
+    CONF_COORDS,
+    CONF_SENSOR_GROUPS,
+    DEFAULT_SENSOR_GROUPS,
+    DOMAIN,
+    SENSOR_GROUP_CURRENT,
+    SENSOR_GROUP_EVENT,
+    SENSOR_GROUP_FORECAST,
+    SENSOR_GROUP_HISTORY,
+    SENSOR_GROUP_ROLLING,
+)
 from .radar import get_dwd_grid_index
 
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _sensor_group_selector(
+    default: list[str],
+) -> selector.SelectSelector:
+    """Return the sensor group selector."""
+
+    return selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            multiple=True,
+            mode=selector.SelectSelectorMode.LIST,
+            options=[
+                SENSOR_GROUP_CURRENT,
+                SENSOR_GROUP_FORECAST,
+                SENSOR_GROUP_EVENT,
+                SENSOR_GROUP_HISTORY,
+                SENSOR_GROUP_ROLLING,
+            ],
+            translation_key="sensor_groups",
+        ),
+    )
+
+
+def _validate_location(
+    data: dict,
+) -> tuple[dict, dict[str, str]]:
+    """Validate name and coordinates."""
+
+    errors: dict[str, str] = {}
+
+    result = data.copy()
+
+    result[CONF_NAME] = (
+        result[CONF_NAME].strip()
+    )
+
+    if not result[CONF_NAME]:
+        errors["base"] = "invalid_name"
+
+    coords = result.get(CONF_COORDS)
+
+    if coords is None:
+
+        errors["base"] = "invalid_coordinates"
+
+        return result, errors
+
+    latitude = round(
+        coords["latitude"],
+        6,
+    )
+
+    longitude = round(
+        coords["longitude"],
+        6,
+    )
+
+    try:
+
+        get_dwd_grid_index(
+            latitude,
+            longitude,
+        )
+
+    except ValueError:
+
+        errors["base"] = (
+            "outside_dwd_coverage"
+        )
+
+    result["latitude"] = latitude
+    result["longitude"] = longitude
+
+    result.pop(
+        CONF_COORDS,
+        None,
+    )
+
+    return (
+        result,
+        errors,
+    )
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -23,63 +116,90 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    MINOR_VERSION = 1
+    MINOR_VERSION = 2
+
+    _entry_data: dict = {}
 
     async def async_step_user(self, user_input=None) -> FlowResult:
         """Handle the user step."""
+
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            data = user_input.copy()
 
-            if not data[CONF_NAME].lstrip(" "):
-                errors["base"] = "invalid_name"
-
-            coords = data.get(CONF_COORDS)
-
-            if coords is None:
-
-                errors["base"] = "invalid_coordinates"
-
-            else:
-
-                data["latitude"] = round(
-                    coords["latitude"],
-                    6
-                )
-
-                data["longitude"] = round(
-                    coords["longitude"],
-                    6
-                )
-
-                try:
-
-                    get_dwd_grid_index(
-                        data["latitude"],
-                        data["longitude"]
-                    )
-
-                except ValueError:
-
-                    errors["base"] = "outside_dwd_coverage"
-
-                data.pop(CONF_COORDS)
+            data, errors = _validate_location(
+                user_input,
+            )
 
             if not errors:
-                return self.async_create_entry(
-                    title=data[CONF_NAME],
-                    data=data,
-                )
+
+                self._entry_data = data
+
+                return await self.async_step_sensor_groups()
 
         return self.async_show_form(
             step_id="user",
-            data_schema=self.get_shema_user_step(),
+            data_schema=self.get_schema_user_step(),
             errors=errors,
         )
 
+    async def async_step_sensor_groups(
+        self,
+        user_input=None,
+    ) -> FlowResult:
+        """Select enabled sensor groups."""
+
+        if user_input is not None:
+
+            self._entry_data[
+                CONF_SENSOR_GROUPS
+            ] = user_input[
+                CONF_SENSOR_GROUPS
+            ]
+
+            await self.async_set_unique_id(
+                self._entry_data[
+                    CONF_NAME
+                ]
+            )
+
+            self._abort_if_unique_id_configured()
+
+            return self.async_create_entry(
+                title=self._entry_data[
+                    CONF_NAME
+                ],
+                data=self._entry_data,
+            )
+
+        return self.async_show_form(
+            step_id="sensor_groups",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_SENSOR_GROUPS,
+                        default=DEFAULT_SENSOR_GROUPS,
+                    ): _sensor_group_selector(
+                        DEFAULT_SENSOR_GROUPS,
+                    ),
+                }
+            ),
+            description_placeholders={},
+        )
+
+    @staticmethod
     @callback
-    def get_shema_user_step(self) -> vol.Schema:
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> OptionsFlow:
+        """Return the options flow."""
+
+        return OptionsFlow(
+            config_entry,
+        )
+
+    @callback
+    def get_schema_user_step(self) -> vol.Schema:
         """Return the schema for the user step."""
 
         schema = {
@@ -106,3 +226,126 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
          }
 
         return vol.Schema(schema)
+
+
+class OptionsFlow(config_entries.OptionsFlow):
+    """Handle DWD Rain Radar options."""
+
+    def __init__(
+        self,
+        config_entry: ConfigEntry,
+    ) -> None:
+        """Initialize options flow."""
+
+        self._config_entry = config_entry
+
+        self._updated_location: dict = {}
+
+    async def async_step_init(
+        self,
+        user_input=None,
+    ) -> FlowResult:
+        """Edit general settings."""
+
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+
+            data, errors = _validate_location(
+                user_input,
+            )
+
+            if not errors:
+
+                self._updated_location = data
+
+                return await self.async_step_sensor_groups()
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.get_schema_user_step(),
+            errors=errors,
+        )
+
+    @callback
+    def get_schema_user_step(
+        self,
+    ) -> vol.Schema:
+        """Return the schema for the options location step."""
+
+        return vol.Schema(
+            {
+                vol.Required(
+                    CONF_NAME,
+                    default=self._config_entry.title,
+                ): str,
+
+                vol.Required(
+                    CONF_COORDS,
+                    default={
+                        "latitude": self._config_entry.data[
+                            "latitude"
+                        ],
+                        "longitude": self._config_entry.data[
+                            "longitude"
+                        ],
+                    },
+                ): selector.LocationSelector(
+                    selector.LocationSelectorConfig(),
+                ),
+            }
+        )
+
+    async def async_step_sensor_groups(
+        self,
+        user_input=None,
+    ) -> FlowResult:
+        """Manage sensor groups."""
+
+        if user_input is not None:
+
+            updated_data = dict(
+                self._config_entry.data,
+            )
+
+            updated_data.update(
+                self._updated_location,
+            )
+
+            updated_data[
+                CONF_SENSOR_GROUPS
+            ] = user_input[
+                CONF_SENSOR_GROUPS
+            ]
+
+            self.hass.config_entries.async_update_entry(
+                self._config_entry,
+                title=updated_data[
+                    CONF_NAME
+                ],
+                data=updated_data,
+            )
+
+            return self.async_create_entry(
+                title="",
+                data={},
+            )
+
+        enabled_groups = self._config_entry.data.get(
+            CONF_SENSOR_GROUPS,
+            DEFAULT_SENSOR_GROUPS,
+        )
+
+        return self.async_show_form(
+            step_id="sensor_groups",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_SENSOR_GROUPS,
+                        default=enabled_groups,
+                    ): _sensor_group_selector(
+                        enabled_groups,
+                    ),
+                }
+            ),
+        )

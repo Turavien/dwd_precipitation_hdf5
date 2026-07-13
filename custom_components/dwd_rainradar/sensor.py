@@ -29,7 +29,16 @@ from homeassistant.components.sensor import (
 from datetime import datetime
 
 from .attributes import RainAttributes
-from .const import DOMAIN
+from .const import (
+    CONF_SENSOR_GROUPS,
+    DEFAULT_SENSOR_GROUPS,
+    DOMAIN,
+    SENSOR_GROUP_CURRENT,
+    SENSOR_GROUP_EVENT,
+    SENSOR_GROUP_FORECAST,
+    SENSOR_GROUP_HISTORY,
+    SENSOR_GROUP_ROLLING,
+)
 from .coordinator import UpdateCoordinator
 
 
@@ -67,6 +76,24 @@ HISTORY_SENSORS = (
             coordinator.data["rw"],
         attributes_fn=RainAttributes.rw,
     ),
+
+    PrecipitationDescription(
+        key="radolan_sf",
+        translation_key="precipitation_last_24h",
+        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
+        device_class=SensorDeviceClass.PRECIPITATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda coordinator:
+            coordinator.data["sf"],
+    ),
+)
+
+# ------------------------------------------------------------------
+# Rolling historical precipitation
+# ------------------------------------------------------------------
+
+ROLLING_SENSORS = (
 
     PrecipitationDescription(
         key="radolan_rw_2h",
@@ -112,16 +139,6 @@ HISTORY_SENSORS = (
             coordinator.data["rw_12h"],
     ),
 
-    PrecipitationDescription(
-        key="radolan_sf",
-        translation_key="precipitation_last_24h",
-        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
-        device_class=SensorDeviceClass.PRECIPITATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda coordinator:
-            coordinator.data["sf"],
-    ),
 )
 
 # ------------------------------------------------------------------
@@ -248,58 +265,29 @@ EVENT_SENSORS = (
             else None,
     ),
 
-    PrecipitationDescription(
-        key="radvor_rv_duration",
-        translation_key="precipitation_duration",
-        native_unit_of_measurement="min",
-        suggested_display_precision=0,
-        value_fn=lambda coordinator:
-            coordinator.data["rv"]["precipitation_duration"]
-            if coordinator.data.get("rv")
-            else None,
-    ),
-
 )
 
-# ------------------------------------------------------------------
-# Forecast maximum precipitation intensity
-# ------------------------------------------------------------------
-
-FORECAST_INTENSITY_SENSORS = (
-
-    PrecipitationDescription(
-        key="radvor_rv_max",
-        translation_key="max_intensity",
-        native_unit_of_measurement="mm/h",
-        device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda coordinator:
-            coordinator.data["rv"]["max_intensity"]
-            if coordinator.data.get("rv")
-            else None,
+SENSOR_GROUP_MAP = {
+    SENSOR_GROUP_CURRENT: (
+        *CURRENT_INTENSITY_SENSORS,
     ),
 
-    PrecipitationDescription(
-        key="radvor_rv_max_at",
-        translation_key="max_intensity_at",
-        native_unit_of_measurement="min",
-        suggested_display_precision=0,
-        value_fn=lambda coordinator:
-            coordinator.data["rv"]["max_intensity_at"]
-            if coordinator.data.get("rv")
-            else None,
+    SENSOR_GROUP_FORECAST: (
+        *FORECAST_SENSORS,
     ),
 
-)
+    SENSOR_GROUP_EVENT: (
+        *EVENT_SENSORS,
+    ),
 
-SENSORS = (
-    *CURRENT_INTENSITY_SENSORS,
-    *FORECAST_INTENSITY_SENSORS,
-    *EVENT_SENSORS,
-    *FORECAST_SENSORS,
-    *HISTORY_SENSORS,
-)
+    SENSOR_GROUP_HISTORY: (
+        *HISTORY_SENSORS,
+    ),
+
+    SENSOR_GROUP_ROLLING: (
+        *ROLLING_SENSORS,
+    ),
+}
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -310,12 +298,30 @@ async def async_setup_entry(
 
     coordinator = entry.runtime_data.coordinator
 
+    enabled_groups = entry.options.get(
+        CONF_SENSOR_GROUPS,
+        entry.data.get(
+            CONF_SENSOR_GROUPS,
+            DEFAULT_SENSOR_GROUPS,
+        ),
+    )
+
+    descriptions: list[PrecipitationDescription] = []
+
+    for group in enabled_groups:
+        descriptions.extend(
+            SENSOR_GROUP_MAP.get(
+                group,
+                (),
+            )
+        )
+
     async_add_entities(
         DwdRainRadarSensor(
             coordinator,
-            description
+            description,
         )
-        for description in SENSORS
+        for description in descriptions
     )
 
 

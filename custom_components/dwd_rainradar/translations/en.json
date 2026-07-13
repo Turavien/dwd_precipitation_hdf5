@@ -9,12 +9,38 @@
           "name": "Name",
           "coordinates": "Coordinates"
         }
+      },
+      "sensor_groups": {
+        "title": "Select sensor groups",
+        "description": "Select which sensor groups should be created.\n\nNote: Rolling precipitation totals are calculated from hourly RADOLAN data. These sensors may require up to 12 hours before becoming fully available.",
+        "data": {
+          "sensor_groups": "Sensor groups"
+        }
+      },
+      "init": {
+        "title": "Sensor groups",
+        "data": {
+          "sensor_groups": "Sensor groups"
+        },
+        "description": "Note: Rolling precipitation totals require up to 12 hours of historical data."
       }
     },
     "error": {
       "invalid_name": "Invalid name",
       "invalid_coordinates": "Invalid coordinates",
       "outside_dwd_coverage": "Location is outside DWD radar coverage"
+    }
+  },
+
+  "selector": {
+    "sensor_groups": {
+      "options": {
+        "current": "Current precipitation",
+        "event": "Precipitation event",
+        "forecast": "Forecast totals",
+        "history": "Historical totals",
+        "rolling": "Rolling totals"
+      }
     }
   },
   "entity": {
@@ -58,17 +84,8 @@
       "intensity_in_15min": {
         "name": "Expected intensity in 15min"
       },
-      "max_intensity": {
-        "name": "Expected max. intensity"
-      },
-      "max_intensity_at": {
-        "name": "Expected max. intensity in"
-      },
       "precipitation_start": {
         "name": "Expected precipitation in"
-      },
-      "precipitation_duration": {
-        "name": "Expected precipitation for"
       }
     },
     "binary_sensor": {
