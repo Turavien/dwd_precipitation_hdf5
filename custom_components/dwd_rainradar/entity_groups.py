@@ -14,6 +14,7 @@ ENTITY_GROUPS = {
         "radvor_rv_5min",
         "radvor_rv_10min",
         "radvor_rv_15min",
+        "precipitation_active",
     ),
 
     SENSOR_GROUP_FORECAST: (

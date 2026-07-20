@@ -38,15 +38,20 @@ async def async_remove_disabled_entities(
                 f"{entry.entry_id}_{entity_key}"
             )
 
-            entity_id = registry.async_get_entity_id(
+            for platform in (
                 "sensor",
-                entry.domain,
-                unique_id,
-            )
+                "binary_sensor",
+            ):
 
-            if entity_id is None:
-                continue
+                entity_id = registry.async_get_entity_id(
+                    platform,
+                    entry.domain,
+                    unique_id,
+                )
 
-            registry.async_remove(
-                entity_id,
-            )
+                if entity_id is None:
+                    continue
+
+                registry.async_remove(
+                    entity_id,
+                )
