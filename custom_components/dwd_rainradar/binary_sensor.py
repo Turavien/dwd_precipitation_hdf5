@@ -23,8 +23,14 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
 )
 
-from .const import DOMAIN
 from .coordinator import UpdateCoordinator
+
+from .const import (
+    CONF_SENSOR_GROUPS,
+    DEFAULT_SENSOR_GROUPS,
+    DOMAIN,
+    SENSOR_GROUP_EVENT,
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -33,6 +39,7 @@ class RainBinarySensorDescription(
 ):
     """Binary sensor description."""
 
+    sensor_group: str
     value_fn: Callable[[dict], bool]
 
 
@@ -41,6 +48,7 @@ BINARY_SENSORS = (
     RainBinarySensorDescription(
         key="radvor_rv_active",
         translation_key="precipitation_active",
+        sensor_group=SENSOR_GROUP_EVENT,
         value_fn=lambda data:
             data["rv"]["precipitation_active"]
             if data.get("rv")
@@ -57,6 +65,16 @@ async def async_setup_entry(
 ) -> None:
     """Set up binary sensors."""
 
+    enabled_groups = set(
+        entry.options.get(
+            CONF_SENSOR_GROUPS,
+            entry.data.get(
+                CONF_SENSOR_GROUPS,
+                DEFAULT_SENSOR_GROUPS,
+            ),
+        )
+    )
+
     coordinator = entry.runtime_data.coordinator
 
     async_add_entities(
@@ -65,6 +83,7 @@ async def async_setup_entry(
             description,
         )
         for description in BINARY_SENSORS
+        if description.sensor_group in enabled_groups
     )
 
 

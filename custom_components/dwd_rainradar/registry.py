@@ -6,9 +6,11 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
-from .const import CONF_SENSOR_GROUPS
+from .const import (
+    CONF_SENSOR_GROUPS,
+    DEFAULT_SENSOR_GROUPS,
+)
 from .entity_groups import ENTITY_GROUPS
-
 
 async def async_remove_disabled_entities(
     hass: HomeAssistant,
@@ -17,9 +19,12 @@ async def async_remove_disabled_entities(
     """Remove entities that belong to disabled sensor groups."""
 
     enabled_groups = set(
-        entry.data.get(
+        entry.options.get(
             CONF_SENSOR_GROUPS,
-            [],
+            entry.data.get(
+                CONF_SENSOR_GROUPS,
+                DEFAULT_SENSOR_GROUPS,
+            ),
         )
     )
 
