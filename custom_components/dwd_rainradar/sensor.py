@@ -265,6 +265,19 @@ EVENT_SENSORS = (
             else None,
     ),
 
+    PrecipitationDescription(
+        key="radvor_rv_max",
+        translation_key="maximum_precipitation_intensity",
+        native_unit_of_measurement="mm/h",
+        device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda coordinator:
+            coordinator.data["rv"]["maximum_intensity"]
+            if coordinator.data.get("rv")
+            else None,
+    ),
+
 )
 
 SENSOR_GROUP_MAP = {

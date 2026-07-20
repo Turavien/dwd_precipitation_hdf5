@@ -92,11 +92,14 @@ Sie stellt folgende Entitäten bereit:
 * Erwartete Niederschlagsintensität in 5 Minuten [mm/h]
 * Erwartete Niederschlagsintensität in 10 Minuten [mm/h]
 * Erwartete Niederschlagsintensität in 15 Minuten [mm/h]
-* Niederschlag aktiv (Binärsensor)
 
 ### Niederschlagsereignis
 
 * Zeit bis zum nächsten Niederschlag [min]
+* Erwartete max. Niederschlagsintensität nächste 3 Std [mm/h]
+* Niederschlag aktiv (Binärsensor)
+
+Diese Sensorgruppe kombiniert Informationen zum unmittelbar bevorstehenden Niederschlag sowie zur höchsten vorhergesagten Niederschlagsintensität innerhalb des dreistündigen RADVOR-Vorhersagezeitraums.
 
 ## Eigenschaften
 
@@ -134,6 +137,8 @@ Radarbasierte Niederschlagsanalyse der letzten Stunde.
 
 Dieses Produkt liefert die gemessene Niederschlagssumme der vergangenen Stunde und dient als Grundlage für die berechneten gleitenden Niederschlagssummen (2 h, 3 h, 6 h und 12 h).
 
+Die rollierenden Niederschlagssummen werden aus den stündlich veröffentlichten RADOLAN-RW-Daten fortlaufend aufgebaut und dauerhaft innerhalb der Integration gespeichert. Nach einer Neuinstallation oder dem Löschen der gespeicherten Historie stehen diese Sensoren daher zunächst nur eingeschränkt zur Verfügung. Bis sämtliche rollierenden Niederschlagssummen vollständig berechnet werden können, können bis zu 12 Stunden vergehen.
+
 ### RADOLAN SF
 
 Radarbasierte Niederschlagsanalyse der vergangenen 24 Stunden.
@@ -161,7 +166,10 @@ Aus diesem Produkt werden folgende Entitäten abgeleitet:
 * erwartete Niederschlagsintensität in 10 Minuten
 * erwartete Niederschlagsintensität in 15 Minuten
 * berechneter Zeitpunkt des nächsten Niederschlags
+* erwartete maximale Niederschlagsintensität innerhalb der nächsten 3 Stunden
 * Binärsensor **„Niederschlag aktiv“**
+
+Die maximale Niederschlagsintensität entspricht dem höchsten vorhergesagten Intensitätswert innerhalb des vollständigen dreistündigen RADVOR-Vorhersagezeitraums.
 
 ## Installation über HACS
 

@@ -92,11 +92,14 @@ It provides the following entities:
 * Expected precipitation intensity in 5 minutes [mm/h]
 * Expected precipitation intensity in 10 minutes [mm/h]
 * Expected precipitation intensity in 15 minutes [mm/h]
-* Precipitation active (binary sensor)
 
 ### Rain event
 
 * Time until next precipitation [min]
+* Expected max. precipitation intensity next 3h [mm/h]
+* Precipitation active (binary sensor)
+
+This sensor group combines information about the next expected precipitation together with the highest forecast precipitation intensity within the three-hour RADVOR forecast period.
 
 ## Characteristics
 
@@ -134,6 +137,8 @@ Hourly radar-based precipitation analysis.
 
 This product provides the measured precipitation total for the last hour and serves as the basis for the calculated rolling precipitation totals (2 h, 3 h, 6 h and 12 h).
 
+Rolling precipitation totals are continuously built from the hourly RADOLAN RW data and stored persistently by the integration. After a fresh installation or after deleting the stored history, these sensors are only gradually populated. It can therefore take up to 12 hours before all rolling precipitation totals become fully available.
+
 ### RADOLAN SF
 
 Radar-based precipitation analysis for the previous 24 hours.
@@ -160,8 +165,11 @@ This product is used to derive:
 * forecast precipitation intensity after 5 minutes
 * forecast precipitation intensity after 10 minutes
 * forecast precipitation intensity after 15 minutes
-* the calculated precipitation event start
+* the calculated start of the next precipitation
+* the expected maximum precipitation intensity within the next 3 hours
 * the binary sensor **Precipitation active**
+
+The maximum precipitation intensity represents the highest forecast precipitation intensity within the complete three-hour RADVOR forecast period.
 
 ## Installation via HACS
 

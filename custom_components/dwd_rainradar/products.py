@@ -480,6 +480,12 @@ class RadvorRV(Product):
                     "precipitation_10": new_data[2],
                     "precipitation_15": new_data[3],
 
+                    "maximum_intensity": (
+                        max(new_data)
+                        if new_data
+                        else None
+                    ),
+
                     "precipitation_start": (
                         _relative_minutes(
                             release_time,

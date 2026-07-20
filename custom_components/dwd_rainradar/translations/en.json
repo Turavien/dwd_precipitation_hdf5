@@ -86,6 +86,9 @@
       },
       "precipitation_start": {
         "name": "Expected precipitation in"
+      },
+      "maximum_precipitation_intensity": {
+        "name": "Expected max. intensity next 3h"
       }
     },
     "binary_sensor": {

@@ -24,6 +24,7 @@ ENTITY_GROUPS = {
 
     SENSOR_GROUP_EVENT: (
         "radvor_rv_start",
+        "radvor_rv_max",
         "radvor_rv_active",
     ),
 

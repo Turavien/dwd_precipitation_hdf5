@@ -86,6 +86,9 @@
       },
       "precipitation_start": {
         "name": "erwarteter Niederschlag in"
+      },
+      "maximum_precipitation_intensity": {
+        "name": "erwartete max. Intensität nächste 3 Std"
       }
     },
     "binary_sensor": {
