@@ -19,49 +19,59 @@
 >
 > It uses publicly available DWD Open Data products only.
 
-This custom Home Assistant integration provides high-resolution radar and precipitation data from the German Weather Service (_Deutscher Wetterdienst_, DWD).
+This custom Home Assistant integration provides high-resolution radar-based precipitation data from the German Weather Service (_Deutscher Wetterdienst_, DWD).
 
-It combines historical precipitation analyses (RADOLAN) with short-term precipitation forecasts (RADVOR) and provides sensors optimized for Home Assistant automations.
+It combines measured precipitation analyses (RADOLAN) with short-term radar forecasts (RADVOR) and exposes the data as Home Assistant entities.
 
 Typical use cases include:
 
 * automated garden irrigation
 * rain warnings for open windows
 * weather-based home automations
+* weather-dependent control of shutters, awnings and outdoor devices
+
+The integration is fully configurable through Home Assistant's user interface. During setup you can select which groups of sensors should be created. Sensor groups can be enabled or disabled later at any time via the integration options without removing and re-adding the integration.
 
 > **Important**
 >
-> The forecast sensors provide the expected precipitation totals for the next
+> Forecast sensors report the **expected accumulated precipitation** for the upcoming
 >
 > * 1 hour
 > * 2 hours
 > * 3 hours
 >
-> Each value represents the total amount of precipitation expected to fall during the corresponding forecast period.
+> Each value represents the total precipitation expected to fall during the corresponding forecast period. They are **not** instantaneous precipitation intensities.
 
-## What's new in Version 2.2.0
+## Features
 
-* Simplified and more intuitive sensor set
-* Added calculated rolling precipitation totals (2 h, 3 h, 6 h and 12 h)
-* Improved sensor names and translations
-* Improved internal architecture and code quality
+* High-resolution radar-based precipitation data provided by the German Weather Service (DWD)
+* Combination of measured precipitation analyses (RADOLAN) and short-term radar forecasts (RADVOR)
+* Automatic selection of the nearest radar grid cell for the configured location
+* Optional sensor groups
+* Fully configurable through Home Assistant ConfigFlow and OptionsFlow
+* Rolling precipitation totals calculated from official DWD data
+* Home Assistant entities for measured, forecast and derived precipitation data
+* Automatic cleanup of entities that belong to disabled sensor groups
+* English and German translations
 
 ## How it works
 
-The integration is based on official DWD radar products.
+The integration is based exclusively on official radar products published by the German Weather Service (_Deutscher Wetterdienst_, DWD).
 
-The radar grids provide a spatial resolution of approximately 1 km × 1 km and consist of 1100 × 1200 grid cells.
+Radar data is provided as a grid with a spatial resolution of approximately **1 km × 1 km** and a size of **1100 × 1200** grid cells.
 
-For the configured location, the grid cell whose center point is closest to the configured coordinates is selected automatically.
+During setup, the integration automatically determines the radar grid cell whose center is closest to the configured location. All sensors are calculated from the data of this grid cell. This ensures spatial consistency across all measured, forecast and calculated entities.
 
-The integration uses:
+The integration currently uses the following DWD products:
 
 * RADOLAN RW
 * RADOLAN SF
 * RADVOR RS
 * RADVOR RV
 
-and provides:
+It provides the following entities:
+
+### Historical precipitation
 
 * Total precipitation during the last hour [mm]
 * Calculated rolling precipitation during the last 2 hours [mm]
@@ -70,90 +80,130 @@ and provides:
 * Calculated rolling precipitation during the last 12 hours [mm]
 * Total precipitation during the last 24 hours [mm]
 
+### Forecast precipitation
+
 * Expected precipitation during the next hour [mm]
 * Expected precipitation during the next 2 hours [mm]
 * Expected precipitation during the next 3 hours [mm]
+
+### Current precipitation
 
 * Current precipitation intensity [mm/h]
 * Expected precipitation intensity in 5 minutes [mm/h]
 * Expected precipitation intensity in 10 minutes [mm/h]
 * Expected precipitation intensity in 15 minutes [mm/h]
+* Precipitation active (binary sensor)
 
-* Expected precipitation starts in [min]
-* Expected precipitation duration [min]
+### Rain event
 
-* Expected maximum precipitation intensity [mm/h]
-* Expected maximum precipitation intensity in [min]
+* Time until next precipitation [min]
 
-* Binary sensor "Precipitation active"
+## Characteristics
 
-## Special features
+The integration combines multiple official DWD radar products into a single data model.
 
-The integration combines several official radar products provided by the German Weather Service (_Deutscher Wetterdienst_, DWD).
+Depending on the entity, the integration provides:
 
-Depending on the sensor, it provides either
+* measured precipitation totals (RADOLAN)
+* forecast precipitation totals (RADVOR RS)
+* forecast precipitation intensities (RADVOR RV)
+* calculated rolling precipitation totals derived from official DWD measurements
 
-* measured precipitation totals,
-* forecast precipitation totals, or
-* precipitation intensities.
+All entities are created from the same radar grid cell, ensuring that measured values, forecasts and calculated entities always refer to exactly the same location.
 
-Forecast totals are based on the RADVOR RS product and provide the expected precipitation for the next one to three hours.
+Sensor groups can be enabled or disabled individually during setup and later via the integration options. Only the selected sensor groups are created.
 
-Precipitation intensities are based on the RADVOR RV product and additionally allow the detection of continuous precipitation events.
+Typical applications include:
 
-The following derived sensors are calculated from these data:
+* automated irrigation
+* rain warnings for open windows
+* protection of awnings and shutters
+* weather-dependent control of outdoor devices
 
-* Precipitation active
-* Expected precipitation start
-* Expected precipitation duration
-* Expected maximum precipitation intensity
-* Calculated rolling precipitation totals (2 h, 3 h, 6 h and 12 h)
-
-This makes the integration suitable for both automated irrigation systems and time-critical weather-based automations such as open-window rain warnings.
-
-The integration only works within Germany and nearby border regions covered by DWD radar products.
-
-Locations outside the supported DWD radar coverage area are rejected during configuration.
+The integration is available only within Germany and nearby border regions covered by the official DWD radar products. Locations outside the supported radar coverage are rejected during configuration.
 
 ## Data Sources
 
-All data is provided by the German Weather Service (_Deutscher Wetterdienst_, DWD).
+All data is obtained from publicly available Open Data products published by the German Weather Service (_Deutscher Wetterdienst_, DWD).
 
-### RADVOR RS
-
-Radar-based forecast of accumulated precipitation totals for one-hour forecast periods.
-
-### RADVOR RV
-
-Radar-based forecast of precipitation intensity with a five-minute temporal resolution.
+The integration currently uses four official radar products, each serving a different purpose.
 
 ### RADOLAN RW
 
-Radar-based precipitation analysis for the last hour.
+Hourly radar-based precipitation analysis.
+
+This product provides the measured precipitation total for the last hour and serves as the basis for the calculated rolling precipitation totals (2 h, 3 h, 6 h and 12 h).
 
 ### RADOLAN SF
 
-Radar-based precipitation analysis for the last 24 hours.
+Radar-based precipitation analysis for the previous 24 hours.
+
+This product provides the measured precipitation total during the last 24 hours.
+
+### RADVOR RS
+
+Radar-based forecast of accumulated precipitation.
+
+It provides the expected accumulated precipitation during the next:
+
+* 1 hour
+* 2 hours
+* 3 hours
+
+### RADVOR RV
+
+Radar-based precipitation intensity forecast with a temporal resolution of five minutes.
+
+This product is used to derive:
+
+* current precipitation intensity
+* forecast precipitation intensity after 5 minutes
+* forecast precipitation intensity after 10 minutes
+* forecast precipitation intensity after 15 minutes
+* the calculated precipitation event start
+* the binary sensor **Precipitation active**
 
 ## Installation via HACS
 
-1. Open HACS
-2. Add a custom repository
-3. Enter the repository URL
-4. Select category “Integration”
-5. Install the integration
-6. Restart Home Assistant
+1. Open **HACS**.
+2. Add this repository as a **Custom Repository**.
+3. Select the category **Integration**.
+4. Install **DWD Rain Radar**.
+5. Restart Home Assistant.
+
+After the restart:
+
+1. Go to **Settings → Devices & Services**.
+2. Click **Add Integration**.
+3. Search for **DWD Rain Radar**.
+4. Enter or select the desired location.
+5. Select the sensor groups you want to create.
+6. Finish the configuration.
+
+Sensor groups can be changed later at any time via **Settings → Devices & Services → DWD Rain Radar → Configure** without removing and re-adding the integration.
 
 ## Project History
 
-This project originally started as a continuation of the [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) integration by [@Hoffmann77](https://github.com/Hoffmann77).
+DWD Rain Radar originated as a continuation of the [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) integration created by [@Hoffmann77](https://github.com/Hoffmann77).
 
-After the German Weather Service (_Deutscher Wetterdienst_, DWD) migrated its radar products to HDF5, the original integration was first adapted and later evolved into an independent project.
+When the German Weather Service (_Deutscher Wetterdienst_, DWD) migrated its radar products to the HDF5 format, the original integration required substantial changes. This project initially focused on restoring compatibility before gradually evolving into an independent integration.
 
-While the original concept remains the foundation, the architecture, data processing and feature set have since been extensively redesigned and expanded.
+Today, DWD Rain Radar has its own architecture, configuration flow, sensor model and development roadmap while continuing to build upon the ideas of the original project.
 
 ## License and Credits
 
-Parts of the radar processing are based on components of the wradlib project.
-The wradlib license can be found under:
+This project is released under the MIT License.
+
+Parts of the radar processing are based on components of the **wradlib** project.
+
+The corresponding license is included in this repository:
+
+```text
 custom_components/dwd_rainradar/radar/LICENSE.txt
+```
+
+## Feedback and Contributions
+
+Bug reports, feature requests and pull requests may be submitted through GitHub.
+
+Issues and feature requests can be reported through the GitHub issue tracker.

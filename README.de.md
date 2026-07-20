@@ -19,143 +19,191 @@
 >
 > Verwendet werden ausschließlich öffentlich verfügbare Open-Data-Produkte des DWD.
 
-Diese Custom Integration für Home Assistant stellt hochaufgelöste Radar- und Niederschlagsdaten des Deutschen Wetterdienstes (DWD) bereit.
+Diese Custom Integration für Home Assistant stellt hochaufgelöste radarbasierte Niederschlagsdaten des Deutschen Wetterdienstes (DWD) bereit.
 
-Sie kombiniert historische Niederschlagsanalysen (RADOLAN) mit kurzzeitigen Niederschlagsvorhersagen (RADVOR) und stellt speziell für Home-Assistant-Automatisierungen optimierte Sensoren bereit.
+Sie kombiniert gemessene Niederschlagsanalysen (RADOLAN) mit kurzzeitigen Radarvorhersagen (RADVOR) und stellt die Daten als Home Assistant-Entitäten bereit.
 
-Typische Einsatzgebiete sind unter anderem:
+Typische Einsatzgebiete sind:
 
 * automatische Gartenbewässerung
 * Warnungen vor einsetzendem Regen bei geöffneten Fenstern
 * wetterabhängige Hausautomatisierungen
+* wetterabhängige Steuerung von Rollläden, Markisen und Außengeräten
+
+Die Integration wird vollständig über die Benutzeroberfläche von Home Assistant konfiguriert. Während der Einrichtung können die gewünschten Sensorgruppen ausgewählt werden. Sensorgruppen lassen sich später jederzeit über die Integrationsoptionen aktivieren oder deaktivieren, ohne dass die Integration entfernt und neu eingerichtet werden muss.
 
 > **Wichtig**
 >
-> Die Vorhersagesensoren liefern die erwarteten Niederschlagssummen für die nächsten
+> Die Vorhersagesensoren liefern die **erwarteten Niederschlagssummen** für die nächsten
 >
 > * 1 Stunde
 > * 2 Stunden
 > * 3 Stunden
 >
-> Die Werte geben also an, wie viel Niederschlag innerhalb dieses Zeitraums voraussichtlich insgesamt fallen wird.
+> Jeder Wert beschreibt die Niederschlagsmenge, die innerhalb des jeweiligen Vorhersagezeitraums voraussichtlich insgesamt fallen wird. Es handelt sich **nicht** um momentane Niederschlagsintensitäten.
 
-## Neu in Version 2.2.0
+## Funktionen
 
-* Vereinfachte und übersichtlichere Sensorstruktur
-* Berechnete Niederschlagssummen für 2 h, 3 h, 6 h und 12 h
-* Überarbeitete Sensorbezeichnungen und Übersetzungen
-* Verbesserte interne Architektur und Codequalität
+* Hochaufgelöste radarbasierte Niederschlagsdaten des Deutschen Wetterdienstes (DWD)
+* Kombination aus gemessenen Niederschlagsanalysen (RADOLAN) und kurzzeitigen Radarvorhersagen (RADVOR)
+* Automatische Auswahl der nächstgelegenen Radarrasterzelle für den konfigurierten Standort
+* Optionale Sensorgruppen
+* Vollständige Konfiguration über den ConfigFlow und OptionsFlow von Home Assistant
+* Berechnete gleitende Niederschlagssummen auf Basis offizieller DWD-Daten
+* Home Assistant-Entitäten für gemessene, vorhergesagte und abgeleitete Niederschlagsdaten
+* Automatische Entfernung von Entitäten deaktivierter Sensorgruppen
+* Deutsche und englische Übersetzungen
 
 ## Funktionsweise
 
-Die Daten basieren auf den offiziellen Radarprodukten des Deutschen Wetterdienstes.
+Die Integration basiert ausschließlich auf offiziellen Radarprodukten des Deutschen Wetterdienstes (DWD).
 
-Die verwendeten Raster besitzen eine räumliche Auflösung von etwa 1 km × 1 km und umfassen insgesamt 1100 × 1200 Rasterzellen.
+Die Radardaten liegen als Raster mit einer räumlichen Auflösung von etwa **1 km × 1 km** und einer Größe von **1100 × 1200** Rasterzellen vor.
 
-Für den konfigurierten Standort wird automatisch diejenige Rasterzelle verwendet, deren Mittelpunkt dem angegebenen Standort am nächsten liegt.
+Während der Einrichtung bestimmt die Integration automatisch die Radarrasterzelle, deren Mittelpunkt dem konfigurierten Standort am nächsten liegt. Alle Entitäten werden aus den Daten dieser Rasterzelle berechnet. Dadurch beziehen sich gemessene Werte, Vorhersagen und berechnete Entitäten stets auf denselben Standort.
 
-Die Integration nutzt:
+Die Integration verwendet derzeit folgende DWD-Produkte:
 
 * RADOLAN RW
 * RADOLAN SF
 * RADVOR RS
 * RADVOR RV
 
-und stellt folgende Werte bereit:
+Sie stellt folgende Entitäten bereit:
+
+### Historischer Niederschlag
 
 * Gesamtniederschlag der letzten Stunde [mm]
-* Berechneter Niederschlag der letzten 2 Stunden [mm]
-* Berechneter Niederschlag der letzten 3 Stunden [mm]
-* Berechneter Niederschlag der letzten 6 Stunden [mm]
-* Berechneter Niederschlag der letzten 12 Stunden [mm]
+* Berechnete gleitende Niederschlagssumme der letzten 2 Stunden [mm]
+* Berechnete gleitende Niederschlagssumme der letzten 3 Stunden [mm]
+* Berechnete gleitende Niederschlagssumme der letzten 6 Stunden [mm]
+* Berechnete gleitende Niederschlagssumme der letzten 12 Stunden [mm]
 * Gesamtniederschlag der letzten 24 Stunden [mm]
 
-* Erwarteter Niederschlag innerhalb der nächsten Stunde [mm]
-* Erwarteter Niederschlag innerhalb der nächsten 2 Stunden [mm]
-* Erwarteter Niederschlag innerhalb der nächsten 3 Stunden [mm]
+### Niederschlagsvorhersage
+
+* Erwartete Niederschlagssumme der nächsten Stunde [mm]
+* Erwartete Niederschlagssumme der nächsten 2 Stunden [mm]
+* Erwartete Niederschlagssumme der nächsten 3 Stunden [mm]
+
+### Aktueller Niederschlag
 
 * Aktuelle Niederschlagsintensität [mm/h]
 * Erwartete Niederschlagsintensität in 5 Minuten [mm/h]
 * Erwartete Niederschlagsintensität in 10 Minuten [mm/h]
 * Erwartete Niederschlagsintensität in 15 Minuten [mm/h]
+* Niederschlag aktiv (Binärsensor)
 
-* Erwarteter Niederschlag beginnt in [min]
-* Erwartete Niederschlagsdauer [min]
+### Niederschlagsereignis
 
-* Erwartete maximale Niederschlagsintensität [mm/h]
-* Erwartete maximale Niederschlagsintensität in [min]
+* Zeit bis zum nächsten Niederschlag [min]
 
-* Binary Sensor „Niederschlag aktiv“
+## Eigenschaften
 
-## Besonderheiten
+Die Integration kombiniert mehrere offizielle Radarprodukte des Deutschen Wetterdienstes in einem gemeinsamen Datenmodell.
 
-Die Integration kombiniert mehrere offizielle Radarprodukte des Deutschen Wetterdienstes.
+Je nach Entität werden folgende Daten bereitgestellt:
 
-Je nach Sensor werden entweder
+* gemessene Niederschlagssummen (RADOLAN)
+* vorhergesagte Niederschlagssummen (RADVOR RS)
+* vorhergesagte Niederschlagsintensitäten (RADVOR RV)
+* berechnete gleitende Niederschlagssummen auf Basis offizieller DWD-Messdaten
 
-* gemessene Niederschlagssummen,
-* prognostizierte Niederschlagssummen oder
-* Niederschlagsintensitäten
+Alle Entitäten werden aus derselben Radarrasterzelle berechnet. Dadurch beziehen sich Messwerte, Vorhersagen und berechnete Entitäten stets auf denselben Standort.
 
-bereitgestellt.
+Sensorgruppen können während der Einrichtung und später über die Integrationsoptionen einzeln aktiviert oder deaktiviert werden. Es werden nur die ausgewählten Sensorgruppen erstellt.
 
-Die Vorhersagesummen basieren auf dem RADVOR-RS-Produkt und liefern die erwarteten Niederschlagsmengen für die nächsten 1 bis 3 Stunden.
+Typische Anwendungsgebiete sind:
 
-Die Niederschlagsintensitäten basieren auf dem RADVOR-RV-Produkt und ermöglichen zusätzlich die Erkennung zusammenhängender Niederschlagsereignisse.
+* automatische Gartenbewässerung
+* Warnungen vor einsetzendem Regen bei geöffneten Fenstern
+* Schutz von Rollläden und Markisen
+* wetterabhängige Steuerung von Außengeräten
 
-Hieraus werden folgende abgeleitete Sensoren berechnet:
-
-* Niederschlag aktiv
-* erwarteter Niederschlagsbeginn
-* erwartete Niederschlagsdauer
-* erwartete maximale Niederschlagsintensität
-* berechnete Niederschlagssummen der letzten 2 h, 3 h, 6 h und 12 h
-
-Dadurch eignet sich die Integration sowohl für Bewässerungssteuerungen als auch für Warnungen vor geöffneten Fenstern oder andere zeitkritische wetterabhängige Automatisierungen.
-
-Die Integration funktioniert nur innerhalb Deutschlands sowie in grenznahen Bereichen, für die DWD-Radardaten verfügbar sind.
-
-Koordinaten außerhalb des verfügbaren DWD-Radargebietes werden bereits bei der Konfiguration abgewiesen.
+Die Integration ist nur innerhalb Deutschlands sowie in grenznahen Bereichen verfügbar, die von den offiziellen DWD-Radarprodukten abgedeckt werden. Standorte außerhalb des unterstützten Radargebiets werden während der Konfiguration abgewiesen.
 
 ## Datenquellen
 
-Alle Daten stammen vom Deutschen Wetterdienst (DWD).
+Alle Daten stammen aus öffentlich verfügbaren Open-Data-Produkten des Deutschen Wetterdienstes (DWD).
 
-### RADVOR RS
-
-Radarbasierte Vorhersage der erwarteten Niederschlagssummen für jeweils ein einstündiges Vorhersagefenster.
-
-### RADVOR RV
-
-Radarbasierte Vorhersage der Niederschlagsintensität im 5-Minuten-Raster.
+Die Integration verwendet derzeit vier offizielle Radarprodukte, die jeweils unterschiedliche Aufgaben erfüllen.
 
 ### RADOLAN RW
 
 Radarbasierte Niederschlagsanalyse der letzten Stunde.
 
+Dieses Produkt liefert die gemessene Niederschlagssumme der vergangenen Stunde und dient als Grundlage für die berechneten gleitenden Niederschlagssummen (2 h, 3 h, 6 h und 12 h).
+
 ### RADOLAN SF
 
-Radarbasierte Niederschlagsanalyse der letzten 24 Stunden.
+Radarbasierte Niederschlagsanalyse der vergangenen 24 Stunden.
+
+Dieses Produkt liefert die gemessene Niederschlagssumme der letzten 24 Stunden.
+
+### RADVOR RS
+
+Radarbasierte Vorhersage kumulierter Niederschlagssummen.
+
+Dieses Produkt liefert die erwarteten Niederschlagssummen für die nächsten:
+
+* 1 Stunde
+* 2 Stunden
+* 3 Stunden
+
+### RADVOR RV
+
+Radarbasierte Vorhersage der Niederschlagsintensität mit einer zeitlichen Auflösung von fünf Minuten.
+
+Aus diesem Produkt werden folgende Entitäten abgeleitet:
+
+* aktuelle Niederschlagsintensität
+* erwartete Niederschlagsintensität in 5 Minuten
+* erwartete Niederschlagsintensität in 10 Minuten
+* erwartete Niederschlagsintensität in 15 Minuten
+* berechneter Zeitpunkt des nächsten Niederschlags
+* Binärsensor **„Niederschlag aktiv“**
 
 ## Installation über HACS
 
-1. HACS öffnen
-2. Benutzerdefinierte Repositories hinzufügen
-3. Repository-URL eintragen
-4. Kategorie „Integration“ auswählen
-5. Integration installieren
-6. Home Assistant neu starten
+1. **HACS** öffnen.
+2. Dieses Repository als **Benutzerdefiniertes Repository** hinzufügen.
+3. Die Kategorie **Integration** auswählen.
+4. **DWD Regenradar** installieren.
+5. Home Assistant neu starten.
+
+Nach dem Neustart:
+
+1. Zu **Einstellungen → Geräte & Dienste** wechseln.
+2. **Integration hinzufügen** auswählen.
+3. Nach **DWD Regenradar** suchen.
+4. Den gewünschten Standort eingeben oder auf der Karte auswählen.
+5. Die gewünschten Sensorgruppen auswählen.
+6. Die Einrichtung abschließen.
+
+Die Sensorgruppen können später jederzeit über **Einstellungen → Geräte & Dienste → DWD Regenradar → Konfigurieren** geändert werden, ohne dass die Integration entfernt und erneut eingerichtet werden muss.
 
 ## Projektgeschichte
 
-Dieses Projekt entstand ursprünglich als Weiterentwicklung der Integration [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation) von [@Hoffmann77](https://github.com/Hoffmann77).
+DWD Regenradar entstand als Fortführung der Integration [DWD Precipitation](https://github.com/Hoffmann77/ha-dwd-precipitation), die von [@Hoffmann77](https://github.com/Hoffmann77) entwickelt wurde.
 
-Nachdem der Deutsche Wetterdienst seine Radarprodukte auf HDF5 umgestellt hatte, wurde die ursprüngliche Integration zunächst angepasst und anschließend eigenständig weiterentwickelt.
+Nachdem der Deutsche Wetterdienst (DWD) seine Radarprodukte auf das HDF5-Format umgestellt hatte, erforderte die ursprüngliche Integration umfangreiche Anpassungen. Dieses Projekt konzentrierte sich zunächst auf die Wiederherstellung der Kompatibilität und entwickelte sich anschließend schrittweise zu einer eigenständigen Integration.
 
-Der ursprüngliche Ansatz bildet weiterhin die Grundlage des Projekts, während Architektur, Datenverarbeitung und Funktionsumfang inzwischen in weiten Teilen neu implementiert wurden.
+Heute verfügt DWD Regenradar über eine eigene Architektur, einen eigenen Konfigurationsfluss, ein eigenes Sensormodell sowie eine eigenständige Entwicklungsroadmap und baut gleichzeitig auf den Ideen des ursprünglichen Projekts auf.
 
 ## Lizenz und Hinweise
 
-Teile der Radarverarbeitung basieren auf Komponenten des wradlib-Projektes.
-Die wradlib-Lizenz befindet sich unter:
+Dieses Projekt wird unter der MIT-Lizenz veröffentlicht.
+
+Teile der Radarverarbeitung basieren auf Komponenten des **wradlib**-Projekts.
+
+Die entsprechende Lizenz befindet sich in diesem Repository unter:
+
+```text
 custom_components/dwd_rainradar/radar/LICENSE.txt
+```
+
+## Feedback und Beiträge
+
+Fehlerberichte, Funktionswünsche und Pull Requests können über GitHub eingereicht werden.
+
+Fehler und Funktionswünsche können über den GitHub-Issue-Tracker gemeldet werden.
