@@ -667,3 +667,15 @@ class RadolanSF(RadolanProduct):
         return (
             f"{DWD_RADOLAN_URL}/sf/raa01-sf_10000-{ts}-dwd---bin.hdf5"
         )
+
+    @property
+    def history_value(self):
+        """Return SF value for persistent history."""
+
+        if self.curr_release is None or self.data is None:
+            return None
+
+        return (
+            self.curr_release,
+            self.data,
+        )

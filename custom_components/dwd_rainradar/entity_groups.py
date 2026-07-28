@@ -38,5 +38,8 @@ ENTITY_GROUPS = {
         "radolan_rw_3h",
         "radolan_rw_6h",
         "radolan_rw_12h",
+        "radolan_sf_36h",
+        "radolan_sf_48h",
+        "radolan_sf_72h",
     ),
 }

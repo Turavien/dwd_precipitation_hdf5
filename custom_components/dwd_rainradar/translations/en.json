@@ -63,6 +63,15 @@
       "precipitation_last_24h": {
         "name": "Amount last 24h"
       },
+      "precipitation_last_36h": {
+        "name": "Amount last 36h (rolling)"
+      },
+      "precipitation_last_48h": {
+        "name": "Amount last 48h (rolling)"
+      },
+      "precipitation_last_72h": {
+        "name": "Amount last 72h (rolling)"
+      },
       "precipitation_next_1h": {
         "name": "Expected amount next 1h"
       },

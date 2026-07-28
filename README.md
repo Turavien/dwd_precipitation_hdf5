@@ -79,6 +79,9 @@ It provides the following entities:
 * Calculated rolling precipitation during the last 6 hours [mm]
 * Calculated rolling precipitation during the last 12 hours [mm]
 * Total precipitation during the last 24 hours [mm]
+* Calculated precipitation during the last 36 hours [mm]
+* Calculated precipitation during the last 48 hours [mm]
+* Calculated precipitation during the last 72 hours [mm]
 
 ### Forecast precipitation
 
@@ -144,6 +147,10 @@ Rolling precipitation totals are continuously built from the hourly RADOLAN RW d
 Radar-based precipitation analysis for the previous 24 hours.
 
 This product provides the measured precipitation total during the last 24 hours.
+
+The integration additionally stores the latest published RADOLAN SF products persistently. This allows historical precipitation totals covering the last 36, 48 and 72 hours to be calculated from multiple official 24-hour products.
+
+After a fresh installation or after deleting the stored history, these sensors are only gradually populated. It can therefore take up to 72 hours before all historical precipitation totals become fully available.
 
 ### RADVOR RS
 

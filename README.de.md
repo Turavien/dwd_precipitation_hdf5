@@ -79,6 +79,9 @@ Sie stellt folgende Entitäten bereit:
 * Berechnete gleitende Niederschlagssumme der letzten 6 Stunden [mm]
 * Berechnete gleitende Niederschlagssumme der letzten 12 Stunden [mm]
 * Gesamtniederschlag der letzten 24 Stunden [mm]
+* Berechnete Niederschlagssumme der letzten 36 Stunden [mm]
+* Berechnete Niederschlagssumme der letzten 48 Stunden [mm]
+* Berechnete Niederschlagssumme der letzten 72 Stunden [mm]
 
 ### Niederschlagsvorhersage
 
@@ -144,6 +147,10 @@ Die rollierenden Niederschlagssummen werden aus den stündlich veröffentlichten
 Radarbasierte Niederschlagsanalyse der vergangenen 24 Stunden.
 
 Dieses Produkt liefert die gemessene Niederschlagssumme der letzten 24 Stunden.
+
+Die Integration speichert zusätzlich die zuletzt veröffentlichten RADOLAN-SF-Produkte dauerhaft. Dadurch können aus mehreren offiziellen 24-Stunden-Summen längere historische Niederschlagssummen über 36, 48 und 72 Stunden berechnet werden.
+
+Nach einer Neuinstallation oder dem Löschen der gespeicherten Historie stehen diese Sensoren zunächst nur eingeschränkt zur Verfügung. Bis sämtliche historischen Niederschlagssummen vollständig berechnet werden können, können bis zu 72 Stunden vergehen.
 
 ### RADVOR RS
 

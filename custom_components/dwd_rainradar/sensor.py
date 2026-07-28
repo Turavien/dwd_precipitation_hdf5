@@ -139,6 +139,39 @@ ROLLING_SENSORS = (
             coordinator.data["rw_12h"],
     ),
 
+    PrecipitationDescription(
+        key="radolan_sf_36h",
+        translation_key="precipitation_last_36h",
+        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
+        device_class=SensorDeviceClass.PRECIPITATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda coordinator:
+            coordinator.data["sf_36h"],
+    ),
+
+    PrecipitationDescription(
+        key="radolan_sf_48h",
+        translation_key="precipitation_last_48h",
+        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
+        device_class=SensorDeviceClass.PRECIPITATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda coordinator:
+            coordinator.data["sf_48h"],
+    ),
+
+    PrecipitationDescription(
+        key="radolan_sf_72h",
+        translation_key="precipitation_last_72h",
+        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
+        device_class=SensorDeviceClass.PRECIPITATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda coordinator:
+            coordinator.data["sf_72h"],
+    ),
+
 )
 
 # ------------------------------------------------------------------

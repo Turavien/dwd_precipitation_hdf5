@@ -74,10 +74,23 @@ class UpdateCoordinator(DataUpdateCoordinator):
 
                 timestamp, value = history_value
 
-                if self.history.add_entry(
-                    timestamp,
-                    value,
-                ):
+                history_changed = False
+
+                if product.PRODUCT_KEY == "rw":
+
+                    history_changed = self.history.add_entry(
+                        timestamp,
+                        value,
+                    )
+
+                elif product.PRODUCT_KEY == "sf":
+
+                    history_changed = self.history.add_sf_entry(
+                        timestamp,
+                        value,
+                    )
+
+                if history_changed:
 
                     await self.history.async_save()
 

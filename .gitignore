@@ -4,3 +4,4 @@ __pycache__/
 *.pyd
 *.bak
 .DS_Store
+*.tar.gz

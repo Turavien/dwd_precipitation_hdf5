@@ -63,6 +63,15 @@
       "precipitation_last_24h": {
         "name": "Menge letzte 24 Std"
       },
+      "precipitation_last_36h": {
+        "name": "Menge letzte 36 Std (rollierend)"
+      },
+      "precipitation_last_48h": {
+        "name": "Menge letzte 48 Std (rollierend)"
+      },
+      "precipitation_last_72h": {
+        "name": "Menge letzte 72 Std (rollierend)"
+      },
       "precipitation_next_1h": {
         "name": "erwartete Menge nächste 1 Std"
       },
