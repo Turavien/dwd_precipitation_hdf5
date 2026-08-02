@@ -62,6 +62,94 @@ class Series:
 
         return self._intervals
 
+    async def _intervals_before(
+        self,
+        timestamp: datetime,
+        count: int,
+    ) -> list[TimeInterval]:
+        """Return consecutive intervals ending before a timestamp."""
+
+        intervals = await self.intervals()
+
+        first: TimeInterval | None = None
+
+        for interval in reversed(
+            intervals,
+        ):
+
+            if interval.valid_until <= timestamp:
+
+                first = interval
+                break
+
+        if first is None:
+            return []
+
+        selected: list[
+            TimeInterval
+        ] = [
+            first,
+        ]
+
+        previous = first
+
+        while len(selected) < count:
+
+            match: TimeInterval | None = next(
+                (
+                    interval
+                    for interval in reversed(
+                        intervals,
+                    )
+                    if interval.valid_until
+                    == previous.valid_from
+                ),
+                None,
+            )
+
+            if match is None:
+
+                best_gap: timedelta | None = None
+
+                for interval in reversed(
+                    intervals,
+                ):
+
+                    if (
+                        interval.valid_until
+                        > previous.valid_from
+                    ):
+                        continue
+
+                    gap = (
+                        previous.valid_from
+                        - interval.valid_until
+                    )
+
+                    if (
+                        best_gap is None
+                        or gap < best_gap
+                    ):
+
+                        best_gap = gap
+                        match = interval
+
+                        if gap == timedelta():
+                            break
+
+            if match is None:
+                return []
+
+            selected.append(
+                match,
+            )
+
+            previous = match
+
+        selected.reverse()
+
+        return selected
+
     async def intervals(
         self,
     ) -> list[
@@ -187,86 +275,10 @@ class Series:
     ) -> list[TimeInterval]:
         """Return hourly intervals ending immediately before a timestamp."""
 
-        intervals = await self.intervals()
-
-        first: TimeInterval | None = None
-
-        for interval in reversed(
-            intervals,
-        ):
-
-            if interval.valid_until <= timestamp:
-
-                first = interval
-                break
-
-        if first is None:
-            return []
-
-        selected: list[
-            TimeInterval
-        ] = [
-            first,
-        ]
-
-        previous = first
-
-        while len(selected) < count:
-
-            match: TimeInterval | None = next(
-                (
-                    interval
-                    for interval in reversed(
-                        intervals,
-                    )
-                    if interval.valid_until
-                    == previous.valid_from
-                ),
-                None,
-            )
-
-            if match is None:
-
-                best_gap: timedelta | None = None
-
-                for interval in reversed(
-                    intervals,
-                ):
-
-                    if (
-                        interval.valid_until
-                        > previous.valid_from
-                    ):
-                        continue
-
-                    gap = (
-                        previous.valid_from
-                        - interval.valid_until
-                    )
-
-                    if (
-                        best_gap is None
-                        or gap < best_gap
-                    ):
-
-                        best_gap = gap
-                        match = interval
-
-                        if gap == timedelta():
-                            break
-
-            if match is None:
-                return []
-
-            selected.append(
-                match,
-            )
-
-            previous = match
-
-        selected.reverse()
-
-        return selected
+        return await self._intervals_before(
+            timestamp,
+            count,
+        )
 
     async def daily_intervals_before(
         self,
@@ -275,86 +287,10 @@ class Series:
     ) -> list[TimeInterval]:
         """Return daily intervals ending immediately before a timestamp."""
 
-        intervals = await self.intervals()
-
-        first: TimeInterval | None = None
-
-        for interval in reversed(
-            intervals,
-        ):
-
-            if interval.valid_until <= timestamp:
-
-                first = interval
-                break
-
-        if first is None:
-            return []
-
-        selected: list[
-            TimeInterval
-        ] = [
-            first,
-        ]
-
-        previous = first
-
-        while len(selected) < count:
-
-            match: TimeInterval | None = next(
-                (
-                    interval
-                    for interval in reversed(
-                        intervals,
-                    )
-                    if interval.valid_until
-                    == previous.valid_from
-                ),
-                None,
-            )
-
-            if match is None:
-
-                best_gap: timedelta | None = None
-
-                for interval in reversed(
-                    intervals,
-                ):
-
-                    if (
-                        interval.valid_until
-                        > previous.valid_from
-                    ):
-                        continue
-
-                    gap = (
-                        previous.valid_from
-                        - interval.valid_until
-                    )
-
-                    if (
-                        best_gap is None
-                        or gap < best_gap
-                    ):
-
-                        best_gap = gap
-                        match = interval
-
-                        if gap == timedelta():
-                            break
-
-            if match is None:
-                return []
-
-            selected.append(
-                match,
-            )
-
-            previous = match
-
-        selected.reverse()
-
-        return selected
+        return await self._intervals_before(
+            timestamp,
+            count,
+        )
 
     async def read_latest_interval(
         self,
