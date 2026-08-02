@@ -29,6 +29,7 @@ from .const import (
     CONF_SENSOR_GROUPS,
     DEFAULT_SENSOR_GROUPS,
     DOMAIN,
+    PRECIPITATION_THRESHOLD,
     SENSOR_GROUP_EVENT,
 )
 
@@ -40,7 +41,7 @@ class RainBinarySensorDescription(
     """Binary sensor description."""
 
     sensor_group: str
-    value_fn: Callable[[dict], bool]
+    value_fn: Callable[[UpdateCoordinator], bool]
 
 
 BINARY_SENSORS = (
@@ -49,10 +50,9 @@ BINARY_SENSORS = (
         key="radvor_rv_active",
         translation_key="precipitation_active",
         sensor_group=SENSOR_GROUP_EVENT,
-        value_fn=lambda data:
-            data["rv"]["precipitation_active"]
-            if data.get("rv")
-            else False,
+        value_fn=lambda coordinator:
+            coordinator.data.intensity_now is not None
+            and coordinator.data.intensity_now >= PRECIPITATION_THRESHOLD,
     ),
 
 )
@@ -127,9 +127,10 @@ class DwdRainRadarBinarySensor(
     @property
     def is_on(self) -> bool:
 
-        data = self.coordinator.data
-
-        if data is None:
+        if self.coordinator.data is None:
             return False
 
-        return self.entity_description.value_fn(data)
+        return self.entity_description.value_fn(
+            self.coordinator,
+        )
+

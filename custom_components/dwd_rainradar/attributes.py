@@ -14,7 +14,12 @@ class RainAttributes:
     ) -> dict[str, object]:
         """Return attributes for RW sensors."""
 
-        history = coordinator.history
+        latest_measurement = None
+
+        if coordinator.data.rw:
+            latest_measurement = (
+                coordinator.data.rw[0].timestamp
+            )
 
         return {
 
@@ -23,11 +28,14 @@ class RainAttributes:
             "source": "RADOLAN",
 
             "latest_measurement": (
-                history.latest_timestamp
+                latest_measurement
             ),
 
             "history_entries": (
-                len(history.entries)
+                len(
+                    coordinator.data.rw,
+                )
             ),
 
         }
+

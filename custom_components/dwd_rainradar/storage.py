@@ -1,423 +1,589 @@
-"""Persistent storage for rolling DWD rainfall history."""
+"""Persistent storage for original DWD product files."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timedelta
+import json
+import logging
 
-from homeassistant.helpers.storage import Store
+from datetime import UTC, datetime
+from pathlib import Path
 
-STORAGE_VERSION = 1
-STORAGE_KEY = "dwd_rainradar_history"
+from homeassistant.core import HomeAssistant
+
+from .models import (
+    FetchResult,
+    ProductMetadata,
+)
+from .products import Product
+
+_METADATA_FILENAME = "metadata.json"
 
 
-@dataclass(slots=True)
-class RainHistoryEntry:
-    """One stored RW measurement."""
+class Storage:
+    """Manage original DWD product files.
 
-    timestamp: datetime
-    value: float
+    This class is responsible only for:
 
+    - creating product directories
+    - storing original DWD files
+    - listing stored files
+    - deleting stored files
 
-class RainHistoryStorage:
-    """Persistent RW history."""
+    It intentionally contains no product logic, no sensor logic,
+    no history handling and no precipitation calculations.
+    """
 
-    def __init__(self, hass) -> None:
-
-        self._store = Store(
-            hass,
-            STORAGE_VERSION,
-            STORAGE_KEY,
-        )
-
-        self.entries: list[RainHistoryEntry] = []
-
-        self.sf_entries: list[RainHistoryEntry] = []
-
-    async def async_load(self) -> None:
-        """Load history."""
-
-        data = await self._store.async_load()
-
-        if not data:
-
-            self.entries = []
-            self.sf_entries = []
-            return
-
-        self.entries = [
-
-            RainHistoryEntry(
-                timestamp=datetime.fromisoformat(
-                    item["timestamp"]
-                ),
-                value=item["value"],
-            )
-
-            for item in data.get(
-                "entries",
-                []
-            )
-        ]
-
-        self.sf_entries = [
-
-            RainHistoryEntry(
-                timestamp=datetime.fromisoformat(
-                    item["timestamp"]
-                ),
-                value=item["value"],
-            )
-
-            for item in data.get(
-                "sf_entries",
-                []
-            )
-        ]
-
-    async def async_save(self) -> None:
-        """Save history."""
-
-        await self._store.async_save(
-            {
-                "entries": [
-                    {
-                        "timestamp": entry.timestamp.isoformat(),
-                        "value": entry.value,
-                    }
-                    for entry in self.entries
-                ],
-                "sf_entries": [
-                    {
-                        "timestamp": entry.timestamp.isoformat(),
-                        "value": entry.value,
-                    }
-                    for entry in self.sf_entries
-                ],
-            }
-        )
-
-    def add_entry(
+    def __init__(
         self,
-        timestamp: datetime,
-        value: float,
-    ) -> bool:
-        """Add a new RW value.
-
-        Returns True if history changed.
-        """
-
-        if self.entries:
-
-            last = self.entries[-1]
-
-            if last.timestamp == timestamp:
-
-                if last.value == value:
-                    return False
-
-                last.value = value
-
-                return True
-
-        self.entries.append(
-            RainHistoryEntry(
-                timestamp=timestamp,
-                value=value,
-            )
-        )
-
-        self.entries.sort(
-            key=lambda item: item.timestamp
-        )
-
-        self.prune()
-
-        return True
-
-    def add_sf_entry(
-        self,
-        timestamp: datetime,
-        value: float,
-    ) -> bool:
-        """Add a new SF value.
-
-        Returns True if history changed.
-        """
-
-        if self.sf_entries:
-
-            last = self.sf_entries[-1]
-
-            if last.timestamp == timestamp:
-
-                if last.value == value:
-                    return False
-
-                last.value = value
-
-                return True
-
-        self.sf_entries.append(
-            RainHistoryEntry(
-                timestamp=timestamp,
-                value=value,
-            )
-        )
-
-        self.sf_entries.sort(
-            key=lambda item: item.timestamp
-        )
-
-        self.prune_sf()
-
-        return True
-
-    def prune(
-        self,
-        hours: int = 37,
+        hass: HomeAssistant,
     ) -> None:
-        """Keep only the recent history."""
+        """Initialize storage."""
 
-        if not self.entries:
-            return
+        self._hass = hass
 
-        newest = self.entries[-1].timestamp
+        self._base_directory = (
+            Path(hass.config.config_dir)
+            / "dwd_rainradar"
+        )
 
-        limit = newest - timedelta(hours=hours)
-
-        self.entries = [
-
-            entry
-
-            for entry in self.entries
-
-            if entry.timestamp >= limit
-        ]
-
-    def prune_sf(
+    def get_product_directory(
         self,
-        hours: int = 73,
-    ) -> None:
-        """Keep only the recent SF history."""
+        product_key: str,
+    ) -> Path:
+        """Return the directory for one DWD product."""
 
-        if not self.sf_entries:
-            return
+        return (
+            self._base_directory
+            / product_key.lower()
+        )
 
-        newest = self.sf_entries[-1].timestamp
-
-        limit = newest - timedelta(hours=hours)
-
-        self.sf_entries = [
-
-            entry
-
-            for entry in self.sf_entries
-
-            if entry.timestamp >= limit
-        ]
-
-    def rolling_sum(
+    def _build_filename(
         self,
-        timestamp: datetime | None,
-        hours: int,
-    ) -> float | None:
-        """Return rolling precipitation sum.
+        product: Product,
+        valid_from: datetime,
+        valid_until: datetime,
+    ) -> str:
+        """Build the storage filename for one DWD product."""
 
-        Allows one missing hourly RW value.
-        """
+        valid_from = valid_from.astimezone(
+            UTC,
+        )
 
-        if timestamp is None:
-            return None
+        valid_until = valid_until.astimezone(
+            UTC,
+        )
 
-        if not self.entries:
-            return None
+        return (
+            f"{product.key}"
+            f"{valid_from:%Y%m%d%H%M}"
+            "_"
+            f"{valid_until:%Y%m%d%H%M}"
+            f".{product.file_extension}"
+        )
 
-        current = next(
+    def _parse_product_interval(
+        self,
+        product: Product,
+        path: Path,
+    ) -> tuple[datetime, datetime]:
+        """Extract the validity interval from a stored filename."""
 
-            (
-                index
+        filename = path.name.removesuffix(
+            f".{product.file_extension}",
+        )
 
-                for index, entry
+        interval = filename.removeprefix(
+            product.key,
+        )
 
-                in reversed(list(enumerate(self.entries)))
+        start, end = interval.split(
+            "_",
+        )
 
-                if entry.timestamp == timestamp
+        return (
+            datetime.strptime(
+                start,
+                "%Y%m%d%H%M",
+            ).replace(
+                tzinfo=UTC,
             ),
-
-            None,
+            datetime.strptime(
+                end,
+                "%Y%m%d%H%M",
+            ).replace(
+                tzinfo=UTC,
+            ),
         )
 
-        if current is None:
-            return None
-
-        total = self.entries[current].value
-
-        shift_used = False
-
-        current_time = self.entries[current].timestamp
-
-        for _ in range(hours - 1):
-
-            found = False
-
-            for candidate in range(current - 1, -1, -1):
-
-                candidate_time = self.entries[candidate].timestamp
-
-                delta = (
-                    current_time
-                    - candidate_time
-                ).total_seconds()
-
-                if 55 * 60 <= delta <= 65 * 60:
-
-                    total += self.entries[candidate].value
-
-                    current = candidate
-
-                    current_time = candidate_time
-
-                    found = True
-
-                    break
-
-                if (
-                    not shift_used
-                    and 115 * 60 <= delta <= 125 * 60
-                ):
-
-                    total += self.entries[candidate].value
-
-                    current = candidate
-
-                    current_time = candidate_time
-
-                    shift_used = True
-
-                    found = True
-
-                    break
-
-                if delta > 125 * 60:
-
-                    break
-
-            if not found:
-
-                return None
-
-        return total
-
-    def sum_rw_range(
+    def _get_file_path(
         self,
-        start_hours_ago: int,
-        end_hours_ago: int,
-    ) -> float | None:
-        """Return RW sum for a historical hour range."""
+        product_key: str,
+        filename: str,
+    ) -> Path:
+        """Return the path of one stored DWD file."""
 
-        if not self.entries:
-            return None
+        return (
+            self.get_product_directory(
+                product_key,
+            )
+            / filename
+        )
 
-        newest = self.entries[-1].timestamp
+    def _get_metadata_path(
+        self,
+        product_key: str,
+    ) -> Path:
+        """Return the metadata file for one DWD product."""
 
-        total = 0.0
-        found = 0
+        return (
+            self.get_product_directory(
+                product_key,
+            )
+            / _METADATA_FILENAME
+        )
 
-        shift_used = False
+    async def async_ensure_product_directory(
+        self,
+        product_key: str,
+    ) -> Path:
+        """Ensure that the directory for a product exists."""
 
-        for hour in range(
-            start_hours_ago,
-            end_hours_ago + 1,
+        return await self._hass.async_add_executor_job(
+            self._ensure_product_directory,
+            product_key,
+        )
+
+    async def async_store_file(
+        self,
+        result: FetchResult,
+    ) -> Path:
+        """Store one original DWD file."""
+
+        if (
+            result.valid_from is None
+            or result.valid_until is None
         ):
+            raise ValueError(
+                "Validity interval missing."
+            )
 
-            target = newest - timedelta(hours=hour)
+        return await self._hass.async_add_executor_job(
+            self._store_file,
+            result,
+        )
 
-            matched = False
+    async def async_list_files(
+        self,
+        product_key: str,
+    ) -> list[Path]:
+        """Return all stored files for one product."""
 
-            for entry in reversed(self.entries):
+        return await self._hass.async_add_executor_job(
+            self._list_files,
+            product_key,
+        )
 
-                delta = abs(
-                    (
-                        entry.timestamp
-                        - target
-                    ).total_seconds()
+    async def async_get_product_interval(
+        self,
+        product: Product,
+        path: Path,
+    ) -> tuple[datetime, datetime]:
+        """Return the validity interval encoded in a stored filename."""
+
+        return await self._hass.async_add_executor_job(
+            self._parse_product_interval,
+            product,
+            path,
+        )
+
+    async def async_list_intervals(
+        self,
+        product: Product,
+    ) -> list[tuple[datetime, datetime]]:
+        """Return all validity intervals for a product."""
+
+        return await self._hass.async_add_executor_job(
+            self._list_intervals,
+            product,
+        )
+
+    async def async_read_product(
+        self,
+        product: Product,
+        valid_from: datetime,
+    ) -> FetchResult:
+        """Read one stored DWD file."""
+
+        return await self._hass.async_add_executor_job(
+            self._read_product,
+            product,
+            valid_from,
+        )
+
+    async def async_read_latest_product(
+        self,
+        product: Product,
+    ) -> FetchResult:
+        """Read the newest stored DWD file."""
+
+        return await self._hass.async_add_executor_job(
+            self._read_latest_product,
+            product,
+        )
+
+    async def async_delete_product(
+        self,
+        product: Product,
+        valid_from: datetime,
+    ) -> None:
+        """Delete one stored file."""
+
+        await self._hass.async_add_executor_job(
+            self._delete_product,
+            product,
+            valid_from,
+        )
+
+    async def async_delete_old_files(
+        self,
+        product: Product,
+        cutoff: datetime,
+    ) -> None:
+        """Delete all products older than the cutoff timestamp."""
+
+        await self._hass.async_add_executor_job(
+            self._delete_old_files,
+            product,
+            cutoff,
+        )
+
+    async def async_read_metadata(
+        self,
+        product_key: str,
+    ) -> ProductMetadata:
+        """Read metadata for one product."""
+
+        return await self._hass.async_add_executor_job(
+            self._read_metadata,
+            product_key,
+        )
+
+    async def async_write_metadata(
+        self,
+        product_key: str,
+        metadata: ProductMetadata,
+    ) -> None:
+        """Write metadata for one product."""
+
+        await self._hass.async_add_executor_job(
+            self._write_metadata,
+            product_key,
+            metadata,
+        )
+
+    async def async_store_product(
+        self,
+        result: FetchResult,
+    ) -> None:
+        """Store one downloaded product including metadata."""
+
+        if (
+            result.valid_from is None
+            or result.valid_until is None
+        ):
+            raise ValueError(
+                "Validity interval missing."
+            )
+
+        await self.async_store_file(
+            result,
+        )
+
+        await self.async_write_metadata(
+            result.product.key,
+            result.metadata,
+        )
+
+    def _ensure_product_directory(
+        self,
+        product_key: str,
+    ) -> Path:
+        """Ensure that the directory for a product exists."""
+
+        directory = self.get_product_directory(
+            product_key,
+        )
+
+        directory.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        return directory
+
+    def _list_files(
+        self,
+        product_key: str,
+    ) -> list[Path]:
+        """Return all stored files for one product."""
+
+        directory = self._ensure_product_directory(
+            product_key,
+        )
+
+        return sorted(
+            (
+                path
+                for path in directory.iterdir()
+                if (
+                    path.is_file()
+                    and path.name != _METADATA_FILENAME
+                )
+            ),
+            key=lambda path: path.name,
+        )
+
+    def _list_intervals(
+        self,
+        product: Product,
+    ) -> list[tuple[datetime, datetime]]:
+        """Return all stored validity intervals for a product."""
+
+        intervals: list[
+            tuple[datetime, datetime]
+        ] = []
+
+        for path in self._list_files(
+            product.key,
+        ):
+            try:
+                intervals.append(
+                    self._parse_product_interval(
+                        product,
+                        path,
+                    )
                 )
 
-                if delta <= 5 * 60:
+            except ValueError:
+                continue
 
-                    total += entry.value
-                    found += 1
-                    matched = True
-                    break
+        return intervals
 
-                if (
-                    not shift_used
-                    and 55 * 60 <= delta <= 65 * 60
-                ):
-
-                    total += entry.value
-                    found += 1
-                    shift_used = True
-                    matched = True
-                    break
-
-            if not matched:
-                return None
-
-        if found != (
-            end_hours_ago
-            - start_hours_ago
-            + 1
-        ):
-            return None
-
-        return total
-
-    def get_sf_value(
+    def _store_file(
         self,
-        hours_ago: int,
-    ) -> float | None:
-        """Return stored SF value from approximately hours_ago."""
+        result: FetchResult,
+    ) -> Path:
+        """Store one original DWD file."""
 
-        if not self.sf_entries:
-            return None
-
-        newest = self.sf_entries[-1].timestamp
-
-        target = newest - timedelta(hours=hours_ago)
-
-        for entry in reversed(self.sf_entries):
-
-            delta = abs(
-                (
-                    entry.timestamp
-                    - target
-                ).total_seconds()
+        if result.data is None:
+            raise ValueError(
+                "FetchResult contains no data.",
             )
 
-            if delta <= 5 * 60:
+        directory = self._ensure_product_directory(
+            result.product.key,
+        )
 
-                return entry.value
+        filename = self._build_filename(
+            result.product,
+            result.valid_from,
+            result.valid_until,
+        )
 
-        return None
+        file_path = directory / filename
 
-    @property
-    def latest_timestamp(self) -> datetime | None:
-        """Return the newest stored timestamp."""
+        file_path.write_bytes(
+            result.data,
+        )
 
-        if not self.entries:
-            return None
+        return file_path
 
-        return self.entries[-1].timestamp
-
-    @property
-    def latest_sf_timestamp(
+    def _read_product(
         self,
-    ) -> datetime | None:
-        """Return the newest stored SF timestamp."""
+        product: Product,
+        valid_from: datetime,
+    ) -> FetchResult:
+        """Read one stored DWD file."""
 
-        if not self.sf_entries:
-            return None
+        for file_path in self._list_files(
+            product.key,
+        ):
 
-        return self.sf_entries[-1].timestamp
+            start, end = self._parse_product_interval(
+                product,
+                file_path,
+            )
+
+            if start != valid_from:
+                continue
+
+            return self._build_cached_result(
+                product,
+                start,
+                end,
+                file_path.read_bytes(),
+            )
+
+        raise FileNotFoundError(
+            f"No stored file for {product.key} at {valid_from}."
+        )
+
+    def _read_latest_product(
+        self,
+        product: Product,
+    ) -> FetchResult:
+        """Read the newest stored DWD file."""
+
+        files = self._list_files(
+            product.key,
+        )
+
+        if not files:
+            raise FileNotFoundError(
+                f"No stored file for {product.key}"
+            )
+
+        latest_file = files[-1]
+
+        data = latest_file.read_bytes()
+
+        valid_from, valid_until = (
+            self._parse_product_interval(
+                product,
+                latest_file,
+            )
+        )
+
+        return self._build_cached_result(
+            product,
+            valid_from,
+            valid_until,
+            data,
+        )
+
+    def _delete_product(
+        self,
+        product: Product,
+        valid_from: datetime,
+    ) -> None:
+        """Delete one stored file."""
+
+        for file_path in self._list_files(
+            product.key,
+        ):
+
+            start, _ = self._parse_product_interval(
+                product,
+                file_path,
+            )
+
+            if start != valid_from:
+                continue
+
+            file_path.unlink(
+                missing_ok=True,
+            )
+
+            return
+
+    def _read_metadata(
+        self,
+        product_key: str,
+    ) -> ProductMetadata:
+        """Read metadata for one product."""
+
+        metadata_path = self._get_metadata_path(
+            product_key,
+        )
+
+        if not metadata_path.exists():
+            return ProductMetadata()
+
+        data = json.loads(
+            metadata_path.read_text(
+                encoding="utf-8",
+            ),
+        )
+
+        return ProductMetadata(
+            etag=data.get(
+                "etag",
+            ),
+            last_modified=data.get(
+                "last_modified",
+            ),
+        )
+
+    def _write_metadata(
+        self,
+        product_key: str,
+        metadata: ProductMetadata,
+    ) -> None:
+        """Write metadata for one product."""
+
+        directory = self._ensure_product_directory(
+            product_key,
+        )
+
+        metadata_path = (
+            directory
+            / _METADATA_FILENAME
+        )
+
+        metadata_path.write_text(
+            json.dumps(
+                {
+                    "etag": metadata.etag,
+                    "last_modified": metadata.last_modified,
+                },
+                indent=2,
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
+
+    def _build_cached_result(
+        self,
+        product: Product,
+        valid_from: datetime,
+        valid_until: datetime,
+        data: bytes,
+    ) -> FetchResult:
+        """Build a FetchResult from cached product data."""
+
+        return FetchResult(
+            product=product,
+            downloaded=False,
+            timestamp=valid_until,
+            valid_from=valid_from,
+            valid_until=valid_until,
+            data=data,
+            metadata=self._read_metadata(
+                product.key,
+            ),
+        )
+
+    def _delete_old_files(
+        self,
+        product: Product,
+        cutoff: datetime,
+    ) -> None:
+        """Delete all products older than the cutoff timestamp."""
+
+        for file_path in self._list_files(
+            product.key,
+        ):
+
+            _, valid_until = (
+                self._parse_product_interval(
+                    product,
+                    file_path,
+                )
+            )
+
+            if valid_until < cutoff:
+
+                file_path.unlink(
+                    missing_ok=True,
+                )
+

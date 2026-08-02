@@ -86,17 +86,20 @@ def _lonlat_to_xy(lon, lat):
     )
 
 
-def get_dwd_grid_index(lat, lon):
-    """Return DWD ODIM-H5 grid index."""
+def get_dwd_grid_cell(
+    latitude: float,
+    longitude: float,
+) -> tuple[int, int]:
+    """Return the DWD raster cell for WGS84 coordinates."""
 
     x_ll, y_ll = _lonlat_to_xy(
         _LL_LON,
-        _LL_LAT
+        _LL_LAT,
     )
 
     x_pt, y_pt = _lonlat_to_xy(
-        lon,
-        lat
+        longitude,
+        latitude,
     )
 
     col = int(
@@ -122,8 +125,12 @@ def get_dwd_grid_index(lat, lon):
         or col >= _GRID_COLS
     ):
         raise ValueError(
-            f"Coordinates outside DWD grid: "
-            f"lat={lat}, lon={lon}"
+            "Coordinates outside DWD grid: "
+            f"lat={latitude}, lon={longitude}"
         )
 
-    return row, col
+    return (
+        row,
+        col,
+    )
+

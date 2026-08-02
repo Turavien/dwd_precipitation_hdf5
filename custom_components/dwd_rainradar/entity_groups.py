@@ -19,7 +19,6 @@ ENTITY_GROUPS = {
     SENSOR_GROUP_FORECAST: (
         "radvor_rs_1h",
         "radvor_rs_2h",
-        "radvor_rs_3h",
     ),
 
     SENSOR_GROUP_EVENT: (

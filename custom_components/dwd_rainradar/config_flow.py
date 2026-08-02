@@ -23,7 +23,7 @@ from .const import (
     SENSOR_GROUP_HISTORY,
     SENSOR_GROUP_ROLLING,
 )
-from .radar import get_dwd_grid_index
+from .radar import get_dwd_grid_cell
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ def _validate_location(
 
     try:
 
-        get_dwd_grid_index(
+        grid_cell = get_dwd_grid_cell(
             latitude,
             longitude,
         )
@@ -97,8 +97,11 @@ def _validate_location(
             "outside_dwd_coverage"
         )
 
+        return result, errors
+
     result["latitude"] = latitude
     result["longitude"] = longitude
+    result["grid_cell"] = grid_cell
 
     result.pop(
         CONF_COORDS,

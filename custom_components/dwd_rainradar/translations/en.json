@@ -12,7 +12,7 @@
       },
       "sensor_groups": {
         "title": "Select sensor groups",
-        "description": "Select which sensor groups should be created.\n\nNote: Rolling precipitation totals are calculated from hourly RADOLAN data. These sensors may require up to 12 hours before becoming fully available.",
+        "description": "Select which sensor groups should be created.\n\nNote: Rolling precipitation totals are calculated from hourly RADOLAN data.",
         "data": {
           "sensor_groups": "Sensor groups"
         }
@@ -22,7 +22,7 @@
         "data": {
           "sensor_groups": "Sensor groups"
         },
-        "description": "Note: Rolling precipitation totals require up to 12 hours of historical data."
+        "description": "Note: Rolling precipitation totals are calculated from hourly and 24-hourly RADOLAN data"
       }
     },
     "error": {
@@ -78,9 +78,6 @@
       "precipitation_next_2h": {
         "name": "Expected amount next 2h"
       },
-      "precipitation_next_3h": {
-        "name": "Expected amount next 3h"
-      },
       "intensity_now": {
         "name": "Current intensity"
       },
@@ -97,7 +94,7 @@
         "name": "Expected precipitation in"
       },
       "maximum_precipitation_intensity": {
-        "name": "Expected max. intensity next 3h"
+        "name": "Expected max. intensity next 2h"
       }
     },
     "binary_sensor": {

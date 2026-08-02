@@ -1,119 +1,36 @@
-"""Rolling precipitation calculations."""
+"""Rolling calculations for historical DWD products."""
 
 from __future__ import annotations
 
-from .storage import RainHistoryStorage
+from collections.abc import Iterable
+from typing import Any
 
 
-class RainRollingCalculator:
-    """Calculate derived rolling precipitation values."""
+def rolling_sum(
+    history: Iterable[Any],
+) -> float | None:
+    """Return the sum of all valid precipitation values."""
 
-    def __init__(
-        self,
-        history: RainHistoryStorage,
-    ) -> None:
+    total = 0.0
+    found = False
 
-        self._history = history
+    for historical_product in history:
 
-    def calculate(self) -> dict[str, float | None]:
-        """Return all derived values."""
+        if not historical_product.product.values:
+            continue
 
-        data: dict[str, float | None] = {}
+        parsed = historical_product.product.values[0]
 
-        data.update(
-            self._calculate_rw()
-        )
+        value = parsed.value
 
-        data.update(
-            self._calculate_sf()
-        )
+        if value is None:
+            continue
 
-        return data
+        total += value
+        found = True
 
-    def _calculate_rw(
-        self,
-    ) -> dict[str, float | None]:
-        """Return rolling RW precipitation sums."""
+    if not found:
+        return None
 
-        timestamp = self._history.latest_timestamp
-
-        if timestamp is None:
-
-            return {
-                "rw_2h": None,
-                "rw_3h": None,
-                "rw_6h": None,
-                "rw_12h": None,
-            }
-
-        return {
-
-            "rw_2h": self._history.rolling_sum(
-                timestamp,
-                2,
-            ),
-
-            "rw_3h": self._history.rolling_sum(
-                timestamp,
-                3,
-            ),
-
-            "rw_6h": self._history.rolling_sum(
-                timestamp,
-                6,
-            ),
-
-            "rw_12h": self._history.rolling_sum(
-                timestamp,
-                12,
-            ),
-        }
-
-    def _calculate_sf(
-        self,
-    ) -> dict[str, float | None]:
-        """Return extended precipitation sums based on SF history."""
-
-        sf_now = self._history.get_sf_value(0)
-
-        if sf_now is None:
-
-            return {
-                "sf_36h": None,
-                "sf_48h": None,
-                "sf_72h": None,
-            }
-
-        rw_25_36h = self._history.sum_rw_range(
-            25,
-            36,
-        )
-
-        sf_24h = self._history.get_sf_value(24)
-
-        sf_48h = self._history.get_sf_value(48)
-
-        return {
-
-            "sf_36h": (
-                sf_now + rw_25_36h
-                if rw_25_36h is not None
-                else None
-            ),
-
-            "sf_48h": (
-                sf_now + sf_24h
-                if sf_24h is not None
-                else None
-            ),
-
-            "sf_72h": (
-                sf_now + sf_24h + sf_48h
-                if (
-                    sf_24h is not None
-                    and sf_48h is not None
-                )
-                else None
-            ),
-        }
+    return total
 

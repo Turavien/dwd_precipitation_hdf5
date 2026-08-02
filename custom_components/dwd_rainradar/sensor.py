@@ -1,9 +1,10 @@
+
 """Sensor entities for DWD precipitation data."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from homeassistant.const import (
     UnitOfPrecipitationDepth,
@@ -33,6 +34,7 @@ from .const import (
     CONF_SENSOR_GROUPS,
     DEFAULT_SENSOR_GROUPS,
     DOMAIN,
+    PRECIPITATION_THRESHOLD,
     SENSOR_GROUP_CURRENT,
     SENSOR_GROUP_EVENT,
     SENSOR_GROUP_FORECAST,
@@ -40,6 +42,7 @@ from .const import (
     SENSOR_GROUP_ROLLING,
 )
 from .coordinator import UpdateCoordinator
+from .state import State
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -73,7 +76,7 @@ HISTORY_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rw"],
+            coordinator.data.precipitation_last_1h,
         attributes_fn=RainAttributes.rw,
     ),
 
@@ -85,7 +88,7 @@ HISTORY_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["sf"],
+            coordinator.data.precipitation_last_24h,
     ),
 )
 
@@ -103,7 +106,7 @@ ROLLING_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rw_2h"],
+            coordinator.data.precipitation_last_2h,
     ),
 
     PrecipitationDescription(
@@ -114,7 +117,7 @@ ROLLING_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rw_3h"],
+            coordinator.data.precipitation_last_3h,
     ),
 
     PrecipitationDescription(
@@ -125,7 +128,7 @@ ROLLING_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rw_6h"],
+            coordinator.data.precipitation_last_6h,
     ),
 
     PrecipitationDescription(
@@ -136,7 +139,7 @@ ROLLING_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rw_12h"],
+            coordinator.data.precipitation_last_12h,
     ),
 
     PrecipitationDescription(
@@ -147,7 +150,7 @@ ROLLING_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["sf_36h"],
+            coordinator.data.precipitation_last_36h,
     ),
 
     PrecipitationDescription(
@@ -158,7 +161,7 @@ ROLLING_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["sf_48h"],
+            coordinator.data.precipitation_last_48h,
     ),
 
     PrecipitationDescription(
@@ -169,7 +172,7 @@ ROLLING_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["sf_72h"],
+            coordinator.data.precipitation_last_72h,
     ),
 
 )
@@ -188,9 +191,7 @@ FORECAST_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rs"][0]
-            if coordinator.data.get("rs")
-            else None,
+            coordinator.data.precipitation_next_1h,
     ),
 
     PrecipitationDescription(
@@ -201,22 +202,7 @@ FORECAST_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rs"][1]
-            if coordinator.data.get("rs")
-            else None,
-    ),
-
-    PrecipitationDescription(
-        key="radvor_rs_3h",
-        translation_key="precipitation_next_3h",
-        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
-        device_class=SensorDeviceClass.PRECIPITATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda coordinator:
-            coordinator.data["rs"][2]
-            if coordinator.data.get("rs")
-            else None,
+            coordinator.data.precipitation_next_2h,
     ),
 
 )
@@ -235,9 +221,7 @@ CURRENT_INTENSITY_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rv"]["precipitation_now"]
-            if coordinator.data.get("rv")
-            else None,
+            coordinator.data.intensity_now,
     ),
 
     PrecipitationDescription(
@@ -248,9 +232,7 @@ CURRENT_INTENSITY_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rv"]["precipitation_5"]
-            if coordinator.data.get("rv")
-            else None,
+            coordinator.data.intensity_in_5min,
     ),
 
     PrecipitationDescription(
@@ -261,9 +243,7 @@ CURRENT_INTENSITY_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rv"]["precipitation_10"]
-            if coordinator.data.get("rv")
-            else None,
+            coordinator.data.intensity_in_10min,
     ),
 
     PrecipitationDescription(
@@ -274,9 +254,7 @@ CURRENT_INTENSITY_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rv"]["precipitation_15"]
-            if coordinator.data.get("rv")
-            else None,
+            coordinator.data.intensity_in_15min,
     ),
 
 )
@@ -293,9 +271,7 @@ EVENT_SENSORS = (
         native_unit_of_measurement="min",
         suggested_display_precision=0,
         value_fn=lambda coordinator:
-            coordinator.data["rv"]["precipitation_start"]
-            if coordinator.data.get("rv")
-            else None,
+            coordinator.data.precipitation_start,
     ),
 
     PrecipitationDescription(
@@ -306,9 +282,7 @@ EVENT_SENSORS = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda coordinator:
-            coordinator.data["rv"]["maximum_intensity"]
-            if coordinator.data.get("rv")
-            else None,
+            coordinator.data.maximum_precipitation_intensity,
     ),
 
 )
@@ -372,7 +346,7 @@ async def async_setup_entry(
 
 
 class DwdRainRadarSensor(
-    CoordinatorEntity,
+    CoordinatorEntity[State],
     SensorEntity,
 ):
     """DWD Rain Radar sensor."""
@@ -409,7 +383,10 @@ class DwdRainRadarSensor(
         )
 
     @property
-    def native_value(self):
+    def native_value(
+        self,
+    ) -> float | datetime | None:
+        """Return the native sensor value."""
 
         if self.coordinator.data is None:
             return None
@@ -421,16 +398,28 @@ class DwdRainRadarSensor(
         if value is None:
             return None
 
-        if isinstance(value, datetime):
-            return value
+        if isinstance(
+            value,
+            (int, float),
+        ):
+            if (
+                value > 0
+                and value < PRECIPITATION_THRESHOLD
+            ):
+                return 0.0
 
-        if isinstance(value, (int, float)):
-            return round(value, 1)
+            return round(
+                value,
+                1,
+            )
 
         return value
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(
+        self,
+    ) -> dict[str, object] | None:
+        """Return additional state attributes."""
 
         if (
             self.entity_description.attributes_fn

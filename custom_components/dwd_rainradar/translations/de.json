@@ -12,7 +12,7 @@
       },
       "sensor_groups": {
         "title": "Sensorgruppen auswählen",
-        "description": "Wähle aus, welche Sensorgruppen angelegt werden sollen.\n\nHinweis: Die rollierenden Niederschlagssummen werden aus den stündlichen RADOLAN-Daten berechnet. Diese Sensoren stehen daher erst nach bis zu 12 Stunden vollständig zur Verfügung.",
+        "description": "Wähle aus, welche Sensorgruppen angelegt werden sollen.\n\nHinweis: Die rollierenden Niederschlagssummen werden aus den stündlichen RADOLAN-Daten berechnet.",
         "data": {
           "sensor_groups": "Sensorgruppen"
         }
@@ -22,7 +22,7 @@
         "data": {
           "sensor_groups": "Sensorgruppen"
         },
-        "description": "Hinweis: Rollierende Niederschlagssummen benötigen bis zu 12 Stunden historische Daten."
+        "description": "Hinweis: Die rollierenden Niederschlagssummen werden aus den stündlichen und 24-stündigen RADOLAN-Daten berechnet."
       }
     },
     "error": {
@@ -78,9 +78,6 @@
       "precipitation_next_2h": {
         "name": "erwartete Menge nächste 2 Std"
       },
-      "precipitation_next_3h": {
-        "name": "erwartete Menge nächste 3 Std"
-      },
       "intensity_now": {
         "name": "aktuelle Intensität"
       },
@@ -97,7 +94,7 @@
         "name": "erwarteter Niederschlag in"
       },
       "maximum_precipitation_intensity": {
-        "name": "erwartete max. Intensität nächste 3 Std"
+        "name": "erwartete max. Intensität nächste 2 Std"
       }
     },
     "binary_sensor": {
