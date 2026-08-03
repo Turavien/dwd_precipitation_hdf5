@@ -14,7 +14,6 @@ from .products import (
     RS,
     RV,
     RW,
-    SF,
 )
 from .state import State
 from .storage import Storage
@@ -56,7 +55,6 @@ class Engine:
             RS,
             RV,
             RW,
-            SF,
         )
 
     async def async_update(
@@ -153,22 +151,15 @@ class Engine:
             "rw",
         )
 
-        sf = decoded_products.get(
-            "sf",
-        )
-
         rolling: dict[str, float | None] = {}
 
         if (
             rw is not None
             and rw.values
-            and sf is not None
-            and sf.values
         ):
 
             rolling = await self._history.rolling_summaries(
                 rw_anchor=rw.values[-1].valid_until,
-                sf_anchor=sf.values[-1].valid_until,
                 grid_cell=grid_cell,
             )
 

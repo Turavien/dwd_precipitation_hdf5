@@ -18,7 +18,6 @@ from .models import (
 from .products import (
     Product,
     RW,
-    SF,
 )
 from .rolling import rolling_sum
 from .series import Series
@@ -226,40 +225,6 @@ class ProductHistory:
 
             return total
 
-        if self._series.product.key == "sf":
-
-            days = int(
-                (
-                    end_offset
-                    - start_offset
-                ).total_seconds()
-                // 86400
-            )
-
-            intervals = await self._series.daily_intervals_before(
-                anchor,
-                days,
-            )
-
-            if len(intervals) != days:
-                return None
-
-            total = 0.0
-
-            for interval in intervals:
-
-                decoded = await self._series.read_interval(
-                    interval,
-                    grid_cell,
-                )
-
-                total += (
-                    decoded.values[0].value
-                    or 0.0
-                )
-
-            return total
-
         return rolling_sum(
             await self.historical_products(
                 anchor,
@@ -269,40 +234,6 @@ class ProductHistory:
                 strategy,
             ),
         )
-
-    async def rolling_sum_before(
-        self,
-        timestamp: datetime,
-        grid_cell: tuple[int, int],
-        count: int,
-    ) -> float | None:
-        """Return the rolling sum ending before a timestamp."""
-
-        intervals = await self._series.hourly_intervals_before(
-            timestamp,
-            count,
-        )
-
-        if len(intervals) != count:
-            return None
-
-        total = 0.0
-
-        for interval in intervals:
-
-            decoded = await self._series.read_interval(
-                interval,
-                grid_cell,
-            )
-
-            parsed = decoded.values[0]
-
-            total += (
-                parsed.value
-                or 0.0
-            )
-
-        return total
 
     async def rolling_summaries(
         self,
@@ -423,15 +354,7 @@ class History:
             RW,
         ).prune(
             timedelta(
-                hours=37,
-            ),
-        )
-
-        await self.product(
-            SF,
-        ).prune(
-            timedelta(
-                hours=73,
+                hours=49,
             ),
         )
 
@@ -522,12 +445,20 @@ class History:
     async def rolling_summaries(
         self,
         rw_anchor: datetime,
-        sf_anchor: datetime,
         grid_cell: tuple[int, int],
-    ) -> dict[str, float | None]:
+    ) -> dict[str, float |None]:
         """Return all rolling precipitation summaries."""
 
-        rw_2h, rw_3h, rw_6h, rw_12h = await self.product(
+        (
+            rw_2h,
+            rw_3h,
+            rw_6h,
+            rw_9h,
+            rw_12h,
+            rw_24h,
+            rw_36h,
+            rw_48h,
+        ) = await self.product(
             RW,
         ).rolling_summaries(
             anchor=rw_anchor,
@@ -547,70 +478,36 @@ class History:
                 ),
                 (
                     timedelta(),
+                    timedelta(hours=9),
+                ),
+                (
+                    timedelta(),
                     timedelta(hours=12),
                 ),
-            ),
-        )
-
-        sf_48h, sf_72h = await self.product(
-            SF,
-        ).rolling_summaries(
-            anchor=sf_anchor,
-            grid_cell=grid_cell,
-            windows=(
+                (
+                    timedelta(),
+                    timedelta(hours=24),
+                ),
+                (
+                    timedelta(),
+                    timedelta(hours=36),
+                ),
                 (
                     timedelta(),
                     timedelta(hours=48),
                 ),
-                (
-                    timedelta(),
-                    timedelta(hours=72),
-                ),
             ),
         )
-
-        sf_24h = await self.rolling_sum(
-            product=SF,
-            anchor=sf_anchor,
-            start_offset=timedelta(),
-            end_offset=timedelta(hours=24),
-            grid_cell=grid_cell,
-        )
-
-        sf_interval = await self.product(
-            SF,
-        ).latest_interval()
-
-        sf_36h: float | None = None
-
-        if (
-            sf_interval is not None
-            and sf_24h is not None
-        ):
-
-            rw_before_sf = await self.product(
-                RW,
-            ).rolling_sum_before(
-                timestamp=sf_interval.valid_from,
-                grid_cell=grid_cell,
-                count=12,
-            )
-
-            if rw_before_sf is not None:
-
-                sf_36h = (
-                    rw_before_sf
-                    + sf_24h
-                )
 
         return {
             "rw_2h": rw_2h,
             "rw_3h": rw_3h,
             "rw_6h": rw_6h,
+            "rw_9h": rw_9h,
             "rw_12h": rw_12h,
-            "sf_36h": sf_36h,
-            "sf_48h": sf_48h,
-            "sf_72h": sf_72h,
+            "rw_24h": rw_24h,
+            "rw_36h": rw_36h,
+            "rw_48h": rw_48h,
         }
 
     async def read_resolved(

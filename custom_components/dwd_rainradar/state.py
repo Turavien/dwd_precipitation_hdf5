@@ -184,21 +184,6 @@ class State:
         return latest.value
 
     @property
-    def precipitation_last_24h(
-        self,
-    ) -> float | None:
-        """Return precipitation during the last 24 hours."""
-
-        latest = self._last(
-            "sf",
-        )
-
-        if latest is None:
-            return None
-
-        return latest.value
-
-    @property
     def precipitation_last_2h(
         self,
     ) -> float | None:
@@ -222,50 +207,60 @@ class State:
     def precipitation_last_6h(
         self,
     ) -> float | None:
-        """Return precipitation during the last six hours."""
+        """Return the precipitation during the last 6 hours."""
 
         return self._rolling.get(
             "rw_6h",
         )
 
     @property
+    def precipitation_last_9h(
+        self,
+    ) -> float | None:
+        """Return the precipitation during the last 9 hours."""
+
+        return self._rolling.get(
+            "rw_9h",
+        )
+
+    @property
     def precipitation_last_12h(
         self,
     ) -> float | None:
-        """Return precipitation during the last twelve hours."""
+        """Return the precipitation during the last 12 hours."""
 
         return self._rolling.get(
             "rw_12h",
         )
 
     @property
+    def precipitation_last_24h(
+        self,
+    ) -> float | None:
+        """Return the precipitation during the last 24 hours."""
+
+        return self._rolling.get(
+            "rw_24h",
+        )
+
+    @property
     def precipitation_last_36h(
         self,
     ) -> float | None:
-        """Return precipitation during the last 36 hours."""
+        """Return the precipitation during the last 36 hours."""
 
         return self._rolling.get(
-            "sf_36h",
+            "rw_36h",
         )
 
     @property
     def precipitation_last_48h(
         self,
     ) -> float | None:
-        """Return precipitation during the last 48 hours."""
+        """Return the precipitation during the last 48 hours."""
 
         return self._rolling.get(
-            "sf_48h",
-        )
-
-    @property
-    def precipitation_last_72h(
-        self,
-    ) -> float | None:
-        """Return precipitation during the last 72 hours."""
-
-        return self._rolling.get(
-            "sf_72h",
+            "rw_48h",
         )
 
     @property
@@ -402,12 +397,3 @@ class State:
             "rw",
         )
 
-    @property
-    def sf(
-        self,
-    ) -> tuple[ParsedValue, ...]:
-        """Return RADOLAN-SF values."""
-
-        return self._values(
-            "sf",
-        )

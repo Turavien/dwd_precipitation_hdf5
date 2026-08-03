@@ -68,18 +68,7 @@ RW = Product(
     latest_filename="raa01-rw_10000-latest-dwd---bin.hdf5",
     file_extension="hdf5",
     interval=timedelta(hours=1),
-    retention=timedelta(hours=37),
-)
-
-SF = Product(
-    key="sf",
-    base_url=DWD_RADOLAN_URL,
-    file_type=FileType.HDF5,
-    download_directory="sf",
-    latest_filename="raa01-sf_10000-latest-dwd---bin.hdf5",
-    file_extension="hdf5",
-    interval=timedelta(days=1),
-    retention=timedelta(hours=73),
+    retention=timedelta(hours=49),
 )
 
 RS = Product(
@@ -106,7 +95,6 @@ RV = Product(
 
 PRODUCTS: tuple[Product, ...] = (
     RW,
-    SF,
     RS,
     RV,
 )

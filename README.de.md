@@ -61,7 +61,7 @@ Die Integration wird vollständig über die Benutzeroberfläche von Home Assista
 * Gemessene, vorhergesagte und berechnete Niederschlagsdaten
 * Automatische Auswahl der passenden Radarrasterzelle
 * Optionale Sensorgruppen
-* Rollierende Niederschlagssummen bis 72 Stunden
+* Niederschlagssummen bis 48 Stunden
 * Vollständige ConfigFlow- und OptionsFlow-Unterstützung
 * Automatische Bereinigung deaktivierter Entitäten
 * Deutsche und englische Übersetzungen
@@ -72,10 +72,9 @@ Die Integration verwendet ausschließlich offizielle Radarprodukte des Deutschen
 
 Die Radardaten liegen auf einem Raster von etwa **1 km × 1 km**. Während der Einrichtung wird automatisch die nächstgelegene Rasterzelle ausgewählt, aus der anschließend alle Entitäten berechnet werden.
 
-Die Integration verwendet derzeit folgende DWD-Produkte:
+Die Integration verwendet folgende DWD-Produkte:
 
 * RADOLAN RW
-* RADOLAN SF
 * RADVOR RS
 * RADVOR RV
 
@@ -83,15 +82,15 @@ Sie stellt folgende Entitäten bereit:
 
 ### Historischer Niederschlag
 
-* Gesamtniederschlag der letzten Stunde [mm]
-* Berechnete gleitende Niederschlagssumme der letzten 2 Stunden [mm]
-* Berechnete gleitende Niederschlagssumme der letzten 3 Stunden [mm]
-* Berechnete gleitende Niederschlagssumme der letzten 6 Stunden [mm]
-* Berechnete gleitende Niederschlagssumme der letzten 12 Stunden [mm]
-* Gesamtniederschlag der letzten 24 Stunden [mm]
-* Berechnete Niederschlagssumme der letzten 36 Stunden [mm]
-* Berechnete Niederschlagssumme der letzten 48 Stunden [mm]
-* Berechnete Niederschlagssumme der letzten 72 Stunden [mm]
+* Niederschlag der letzten Stunde [mm]
+* Niederschlag der letzten 2 Stunden [mm]
+* Niederschlag der letzten 3 Stunden [mm]
+* Niederschlag der letzten 6 Stunden [mm]
+* Niederschlag der letzten 9 Stunden [mm]
+* Niederschlag der letzten 12 Stunden [mm]
+* Niederschlag der letzten 24 Stunden [mm]
+* Niederschlag der letzten 36 Stunden [mm]
+* Niederschlag der letzten 48 Stunden [mm]
 
 ### Niederschlagsvorhersage
 
@@ -121,13 +120,7 @@ Alle Daten stammen aus öffentlich verfügbaren Open-Data-Produkten des Deutsche
 
 Radarbasierte Niederschlagssumme der letzten Stunde.
 
-Dieses Produkt dient als Grundlage für die berechneten gleitenden mittelfristigen Niederschlagssummen (2 h, 3 h, 6 h und 12 h).
-
-### RADOLAN SF
-
-Radarbasierte Niederschlagssumme der vergangenen 24 Stunden.
-
-Dieses Produkt dient kombiniert mit RADLON RW als Grundlage für die berechneten gleitenden langfristigen Niederschlagssummen (36 h, 48 h und 72 h).
+Die Integration speichert aufeinanderfolgende RW-Produkte lokal und berechnet daraus sämtliche historischen Niederschlagssummen (1 h, 2 h, 3 h, 6 h, 9 h, 12 h, 24 h, 36 h und 48 h).
 
 ### RADVOR RS
 

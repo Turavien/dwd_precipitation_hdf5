@@ -61,7 +61,7 @@ The integration is fully configurable through the Home Assistant user interface.
 * Measured, forecast and derived precipitation entities
 * Automatic radar grid selection for the configured location
 * Optional sensor groups
-* Rolling precipitation totals up to 72 hours
+* Rolling precipitation totals up to 48 hours
 * Full ConfigFlow and OptionsFlow support
 * Automatic cleanup of disabled entities
 * English and German translations
@@ -72,10 +72,9 @@ The integration exclusively uses official DWD radar products.
 
 Radar data is published on a grid of approximately **1 km × 1 km**. During setup, the nearest grid cell is selected automatically, and all entities are derived from this single location.
 
-The integration currently uses the following DWD products:
+The integration uses the following DWD products:
 
 * RADOLAN RW
-* RADOLAN SF
 * RADVOR RS
 * RADVOR RV
 
@@ -84,14 +83,14 @@ It provides the following entities:
 ### Historical precipitation
 
 * Total precipitation during the last hour [mm]
-* Calculated rolling precipitation during the last 2 hours [mm]
-* Calculated rolling precipitation during the last 3 hours [mm]
-* Calculated rolling precipitation during the last 6 hours [mm]
-* Calculated rolling precipitation during the last 12 hours [mm]
+* Total precipitation during the last 2 hours [mm]
+* Total precipitation during the last 3 hours [mm]
+* Total precipitation during the last 6 hours [mm]
+* Total precipitation during the last 9 hours [mm]
+* Total precipitation during the last 12 hours [mm]
 * Total precipitation during the last 24 hours [mm]
-* Calculated rolling precipitation during the last 36 hours [mm]
-* Calculated rolling precipitation during the last 48 hours [mm]
-* Calculated rolling precipitation during the last 72 hours [mm]
+* Total precipitation during the last 36 hours [mm]
+* Total precipitation during the last 48 hours [mm]
 
 ### Forecast precipitation
 
@@ -115,19 +114,13 @@ This sensor group combines information about the next expected precipitation tog
 
 ## Data Sources
 
-The integration currently uses four official DWD Open Data radar products, each serving a specific purpose.
+The integration currently uses three official DWD Open Data radar products, each serving a specific purpose.
 
 ### RADOLAN RW
 
 Radar-based precipitation total of the previous hour.
 
-This product serves as the basis for the calculated rolling medium-term precipitation totals (2 h, 3 h, 6 h and 12 h).
-
-### RADOLAN SF
-
-Radar-based precipitation total of the previous 24 hours.
-
-This product combined with RADOLAN RW serves as the basis for the calculated rolling long-term precipitation totals (36 h, 48 h and 72h).
+The integration stores consecutive hourly RW products locally and derives all historical precipitation totals from this history (1 h, 2 h, 3 h, 6 h, 9 h, 12 h, 24 h, 36 h and 48 h).
 
 ### RADVOR RS
 

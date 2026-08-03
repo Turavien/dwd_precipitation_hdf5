@@ -49,28 +49,28 @@
         "name": "Amount last 1h"
       },
       "precipitation_last_2h": {
-        "name": "Amount last 2h (rolling)"
+        "name": "Amount last 2h"
       },
       "precipitation_last_3h": {
-        "name": "Amount last 3h (rolling)"
+        "name": "Amount last 3h"
       },
       "precipitation_last_6h": {
-        "name": "Amount last 6h (rolling)"
+        "name": "Amount last 6h"
+      },
+      "precipitation_last_9h": {
+        "name": "Amount last 9h"
       },
       "precipitation_last_12h": {
-        "name": "Amount last 12h (rolling)"
+        "name": "Amount last 12h"
       },
       "precipitation_last_24h": {
         "name": "Amount last 24h"
       },
       "precipitation_last_36h": {
-        "name": "Amount last 36h (rolling)"
+        "name": "Amount last 36h"
       },
       "precipitation_last_48h": {
-        "name": "Amount last 48h (rolling)"
-      },
-      "precipitation_last_72h": {
-        "name": "Amount last 72h (rolling)"
+        "name": "Amount last 48h"
       },
       "precipitation_next_1h": {
         "name": "Expected amount next 1h"

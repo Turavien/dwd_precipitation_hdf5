@@ -29,16 +29,16 @@ ENTITY_GROUPS = {
 
     SENSOR_GROUP_HISTORY: (
         "radolan_rw",
-        "radolan_sf",
     ),
 
     SENSOR_GROUP_ROLLING: (
         "radolan_rw_2h",
         "radolan_rw_3h",
         "radolan_rw_6h",
+        "radolan_rw_9h",
         "radolan_rw_12h",
-        "radolan_sf_36h",
-        "radolan_sf_48h",
-        "radolan_sf_72h",
+        "radolan_rw_24h",
+        "radolan_rw_36h",
+        "radolan_rw_48h",
     ),
 }

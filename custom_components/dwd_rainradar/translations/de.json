@@ -49,28 +49,28 @@
         "name": "Menge letzte 1 Std"
       },
       "precipitation_last_2h": {
-        "name": "Menge letzte 2 Std (rollierend)"
+        "name": "Menge letzte 2 Std"
       },
       "precipitation_last_3h": {
-        "name": "Menge letzte 3 Std (rollierend)"
+        "name": "Menge letzte 3 Std"
       },
       "precipitation_last_6h": {
-        "name": "Menge letzte 6 Std (rollierend)"
+        "name": "Menge letzte 6 Std"
+      },
+      "precipitation_last_9h": {
+        "name": "Menge letzte 9 Std"
       },
       "precipitation_last_12h": {
-        "name": "Menge letzte 12 Std (rollierend)"
+        "name": "Menge letzte 12 Std"
       },
       "precipitation_last_24h": {
         "name": "Menge letzte 24 Std"
       },
       "precipitation_last_36h": {
-        "name": "Menge letzte 36 Std (rollierend)"
+        "name": "Menge letzte 36 Std"
       },
       "precipitation_last_48h": {
-        "name": "Menge letzte 48 Std (rollierend)"
-      },
-      "precipitation_last_72h": {
-        "name": "Menge letzte 72 Std (rollierend)"
+        "name": "Menge letzte 48 Std"
       },
       "precipitation_next_1h": {
         "name": "erwartete Menge nächste 1 Std"

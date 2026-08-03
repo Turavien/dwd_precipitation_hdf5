@@ -80,16 +80,6 @@ HISTORY_SENSORS = (
         attributes_fn=RainAttributes.rw,
     ),
 
-    PrecipitationDescription(
-        key="radolan_sf",
-        translation_key="precipitation_last_24h",
-        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
-        device_class=SensorDeviceClass.PRECIPITATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda coordinator:
-            coordinator.data.precipitation_last_24h,
-    ),
 )
 
 # ------------------------------------------------------------------
@@ -132,6 +122,17 @@ ROLLING_SENSORS = (
     ),
 
     PrecipitationDescription(
+        key="radolan_rw_9h",
+        translation_key="precipitation_last_9h",
+        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
+        device_class=SensorDeviceClass.PRECIPITATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda coordinator:
+            coordinator.data.precipitation_last_9h,
+    ),
+
+    PrecipitationDescription(
         key="radolan_rw_12h",
         translation_key="precipitation_last_12h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
@@ -143,7 +144,18 @@ ROLLING_SENSORS = (
     ),
 
     PrecipitationDescription(
-        key="radolan_sf_36h",
+        key="radolan_rw_24h",
+        translation_key="precipitation_last_24h",
+        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
+        device_class=SensorDeviceClass.PRECIPITATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda coordinator:
+            coordinator.data.precipitation_last_24h,
+    ),
+
+    PrecipitationDescription(
+        key="radolan_rw_36h",
         translation_key="precipitation_last_36h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
@@ -154,7 +166,7 @@ ROLLING_SENSORS = (
     ),
 
     PrecipitationDescription(
-        key="radolan_sf_48h",
+        key="radolan_rw_48h",
         translation_key="precipitation_last_48h",
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
@@ -162,17 +174,6 @@ ROLLING_SENSORS = (
         suggested_display_precision=1,
         value_fn=lambda coordinator:
             coordinator.data.precipitation_last_48h,
-    ),
-
-    PrecipitationDescription(
-        key="radolan_sf_72h",
-        translation_key="precipitation_last_72h",
-        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
-        device_class=SensorDeviceClass.PRECIPITATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda coordinator:
-            coordinator.data.precipitation_last_72h,
     ),
 
 )
