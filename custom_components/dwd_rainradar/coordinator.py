@@ -32,6 +32,7 @@ class UpdateCoordinator(
         self,
         hass: HomeAssistant,
         entry: ConfigEntry,
+        engine: Engine,
     ) -> None:
         """Initialize the coordinator."""
 
@@ -44,9 +45,7 @@ class UpdateCoordinator(
 
         self.config_entry = entry
 
-        self._engine = Engine(
-            hass,
-        )
+        self._engine = engine
 
     async def _async_update_data(
         self,

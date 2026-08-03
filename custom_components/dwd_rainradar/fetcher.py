@@ -45,6 +45,14 @@ class Fetcher:
             hass,
         )
 
+        self._directory_cache: dict[
+            str,
+            tuple[
+                datetime,
+                str,
+            ]
+        ] = {}
+
     def _build_headers(
         self,
         metadata: ProductMetadata | None,
@@ -229,14 +237,40 @@ class Fetcher:
             product.directory_url(),
         )
 
-        async with self._session.get(
-            product.directory_url(),
-            timeout=DOWNLOAD_TIMEOUT,
-        ) as response:
+        now = datetime.now(
+            UTC,
+        )
 
-            response.raise_for_status()
+        cached = self._directory_cache.get(
+            product.key,
+        )
 
-            listing = await response.text()
+        if (
+            cached is not None
+            and (
+                now - cached[0]
+            ).total_seconds() < 60
+        ):
+
+            listing = cached[1]
+
+        else:
+
+            async with self._session.get(
+                product.directory_url(),
+                timeout=DOWNLOAD_TIMEOUT,
+            ) as response:
+
+                response.raise_for_status()
+
+                listing = await response.text()
+
+            self._directory_cache[
+                product.key
+            ] = (
+                now,
+                listing,
+            )
 
         remote_products: list[
             RemoteProduct

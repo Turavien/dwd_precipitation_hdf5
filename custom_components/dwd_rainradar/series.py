@@ -71,82 +71,38 @@ class Series:
 
         intervals = await self.intervals()
 
-        first: TimeInterval | None = None
-
-        for interval in reversed(
-            intervals,
-        ):
-
-            if interval.valid_until <= timestamp:
-
-                first = interval
-                break
-
-        if first is None:
+        if not intervals:
             return []
 
-        selected: list[
-            TimeInterval
-        ] = [
-            first,
+        end_index: int | None = None
+
+        for index in range(
+            len(intervals) - 1,
+            -1,
+            -1,
+        ):
+
+            if (
+                intervals[index].valid_until
+                <= timestamp
+            ):
+                end_index = index
+                break
+
+        if end_index is None:
+            return []
+
+        start_index = max(
+            0,
+            end_index - count + 1,
+        )
+
+        selected = intervals[
+            start_index:end_index + 1
         ]
 
-        previous = first
-
-        while len(selected) < count:
-
-            match: TimeInterval | None = next(
-                (
-                    interval
-                    for interval in reversed(
-                        intervals,
-                    )
-                    if interval.valid_until
-                    == previous.valid_from
-                ),
-                None,
-            )
-
-            if match is None:
-
-                best_gap: timedelta | None = None
-
-                for interval in reversed(
-                    intervals,
-                ):
-
-                    if (
-                        interval.valid_until
-                        > previous.valid_from
-                    ):
-                        continue
-
-                    gap = (
-                        previous.valid_from
-                        - interval.valid_until
-                    )
-
-                    if (
-                        best_gap is None
-                        or gap < best_gap
-                    ):
-
-                        best_gap = gap
-                        match = interval
-
-                        if gap == timedelta():
-                            break
-
-            if match is None:
-                return []
-
-            selected.append(
-                match,
-            )
-
-            previous = match
-
-        selected.reverse()
+        if len(selected) != count:
+            return []
 
         return selected
 

@@ -244,18 +244,77 @@ class ProductHistory:
     ) -> tuple[float | None, ...]:
         """Return multiple rolling precipitation sums."""
 
+        if self._series.product.key != "rw":
+
+            result: list[float | None] = []
+
+            for start_offset, end_offset in windows:
+
+                result.append(
+                    await self.rolling_sum(
+                        anchor,
+                        start_offset,
+                        end_offset,
+                        grid_cell,
+                        strategy,
+                    ),
+                )
+
+            return tuple(
+                result,
+            )
+
+        max_hours = max(
+            int(
+                end_offset.total_seconds()
+                // 3600
+            )
+            for _, end_offset in windows
+        )
+
+        intervals = await self._series.hourly_intervals_before(
+            anchor,
+            max_hours,
+        )
+
+        if len(
+            intervals,
+        ) != max_hours:
+
+            return tuple(
+                None
+                for _ in windows
+            )
+
+        hourly_values: list[float] = []
+
+        for interval in intervals:
+
+            decoded = await self._series.read_interval(
+                interval,
+                grid_cell,
+            )
+
+            hourly_values.append(
+                decoded.values[0].value
+                or 0.0
+            )
+
         result: list[float | None] = []
 
-        for start_offset, end_offset in windows:
+        for _, end_offset in windows:
+
+            hours = int(
+                end_offset.total_seconds()
+                // 3600
+            )
 
             result.append(
-                await self.rolling_sum(
-                    anchor,
-                    start_offset,
-                    end_offset,
-                    grid_cell,
-                    strategy,
-                ),
+                sum(
+                    hourly_values[
+                        :hours
+                    ]
+                )
             )
 
         return tuple(

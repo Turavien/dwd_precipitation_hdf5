@@ -78,12 +78,9 @@ class Timeline:
         if not self._intervals:
             return None
 
-        return max(
-            self._intervals,
-            key=lambda interval: (
-                interval.valid_until,
-            ),
-        )
+        return self._intervals[
+            -1
+        ]
 
     def _overlap(
         self,

@@ -37,7 +37,7 @@ class State:
         """Update the current state."""
 
         self._products = decoded_products
-        self._rolling = rolling or {}
+        self._rolling = {} if rolling is None else rolling
 
     def _product(
         self,

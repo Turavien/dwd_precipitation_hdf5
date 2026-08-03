@@ -46,6 +46,11 @@ class Storage:
             / "dwd_rainradar"
         )
 
+        self._file_cache: dict[
+            str,
+            list[Path],
+        ] = {}
+
     def get_product_directory(
         self,
         product_key: str,
@@ -327,11 +332,18 @@ class Storage:
     ) -> list[Path]:
         """Return all stored files for one product."""
 
+        cached = self._file_cache.get(
+            product_key,
+        )
+
+        if cached is not None:
+            return cached
+
         directory = self._ensure_product_directory(
             product_key,
         )
 
-        return sorted(
+        files = sorted(
             (
                 path
                 for path in directory.iterdir()
@@ -341,6 +353,23 @@ class Storage:
                 )
             ),
             key=lambda path: path.name,
+        )
+
+        self._file_cache[
+            product_key
+        ] = files
+
+        return files
+
+    def _invalidate_file_cache(
+        self,
+        product_key: str,
+    ) -> None:
+        """Invalidate cached file list."""
+
+        self._file_cache.pop(
+            product_key,
+            None,
         )
 
     def _list_intervals(
@@ -394,6 +423,10 @@ class Storage:
 
         file_path.write_bytes(
             result.data,
+        )
+
+        self._invalidate_file_cache(
+            result.product.key,
         )
 
         return file_path
@@ -482,6 +515,10 @@ class Storage:
 
             file_path.unlink(
                 missing_ok=True,
+            )
+
+            self._invalidate_file_cache(
+                product.key,
             )
 
             return
@@ -585,5 +622,9 @@ class Storage:
 
                 file_path.unlink(
                     missing_ok=True,
+                )
+
+                self._invalidate_file_cache(
+                    product.key,
                 )
 

@@ -327,15 +327,14 @@ async def async_setup_entry(
         ),
     )
 
-    descriptions: list[PrecipitationDescription] = []
-
-    for group in enabled_groups:
-        descriptions.extend(
-            SENSOR_GROUP_MAP.get(
-                group,
-                (),
-            )
+    descriptions = [
+        description
+        for group in enabled_groups
+        for description in SENSOR_GROUP_MAP.get(
+            group,
+            (),
         )
+    ]
 
     async_add_entities(
         DwdRainRadarSensor(

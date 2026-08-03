@@ -61,8 +61,21 @@ class Backfill:
             )
         ]
 
+        max_downloads = {
+            "rs": 40,
+            "rv": 40,
+            "rw": 60,
+        }.get(
+            product.key,
+            40,
+        )
+
+        missing_products = missing_products[
+            :max_downloads
+        ]
+
         _LOGGER.debug(
-            "Backfill found %d missing %s products",
+            "Backfill downloading %d missing %s products",
             len(
                 missing_products,
             ),

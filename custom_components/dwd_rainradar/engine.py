@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
@@ -57,11 +59,43 @@ class Engine:
             RW,
         )
 
+        self._update_task: asyncio.Task[State] | None = None
+
+        self._backfill_completed: set[str] = set()
+
+        self._backfill_tasks: set[
+            asyncio.Task[None]
+        ] = set()
+
     async def async_update(
         self,
         grid_cell: tuple[int, int],
     ) -> State:
         """Update all configured DWD products."""
+
+        if self._update_task is not None:
+
+            return await self._update_task
+
+        self._update_task = asyncio.create_task(
+            self._async_update(
+                grid_cell,
+            )
+        )
+
+        try:
+
+            return await self._update_task
+
+        finally:
+
+            self._update_task = None
+
+    async def _async_update(
+        self,
+        grid_cell: tuple[int, int],
+    ) -> State:
+        """Execute one complete update."""
 
         decoded_products = {}
 
@@ -69,29 +103,14 @@ class Engine:
 
         for product in self._products:
 
-            #
-            # 1.
-            # Read stored HTTP metadata.
-            #
-
             metadata = await self._storage.async_read_metadata(
                 product.key,
             )
-
-            #
-            # 2.
-            # Download latest product.
-            #
 
             result = await self._fetcher.async_download(
                 product,
                 metadata,
             )
-
-            #
-            # 3.
-            # Use cached file if unchanged.
-            #
 
             if not result.downloaded:
 
@@ -107,11 +126,6 @@ class Engine:
                         product,
                     )
 
-            #
-            # 4.
-            # Decode product.
-            #
-
             decoded = self._decoder.decode(
                 result,
                 grid_cell,
@@ -119,24 +133,29 @@ class Engine:
 
             latest = decoded.values[-1]
 
-            #
-            # 5.
-            # Persist updated product.
-            #
-
             if result.downloaded:
+
                 await self._history.product(
                     product,
                 ).store(
                     result,
                 )
 
-                await self._backfill.async_backfill(
-                    product,
-                    latest.valid_until
-                    - product.retention
-                    + product.interval / 2,
-                )
+                if (
+                    product.key
+                    not in self._backfill_completed
+                ):
+
+                    self._backfill_completed.add(
+                        product.key,
+                    )
+
+                    self._start_backfill(
+                        product,
+                        latest.valid_until
+                        - product.retention
+                        + product.interval / 2,
+                    )
 
                 updated = True
 
@@ -169,4 +188,26 @@ class Engine:
         )
 
         return self._state
+
+    def _start_backfill(
+        self,
+        product,
+        since,
+    ) -> None:
+        """Start one backfill task."""
+
+        task = asyncio.create_task(
+            self._backfill.async_backfill(
+                product,
+                since,
+            )
+        )
+
+        self._backfill_tasks.add(
+            task,
+        )
+
+        task.add_done_callback(
+            self._backfill_tasks.discard,
+        )
 

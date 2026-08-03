@@ -7,6 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .coordinator import UpdateCoordinator
+from .engine import Engine
 from .const import (
     CONF_SENSOR_GROUPS,
     DEFAULT_SENSOR_GROUPS,
@@ -33,9 +34,22 @@ async def async_setup_entry(
 ) -> bool:
     """Set up DWD Rain Radar from a config entry."""
 
+    domain_data = hass.data.setdefault(
+        DOMAIN,
+        {},
+    )
+
+    engine: Engine = domain_data.setdefault(
+        "engine",
+        Engine(
+            hass,
+        ),
+    )
+
     coordinator = UpdateCoordinator(
         hass,
         entry,
+        engine,
     )
 
     await coordinator.async_config_entry_first_refresh()
@@ -104,7 +118,22 @@ async def async_unload_entry(
 ) -> bool:
     """Unload the config entry."""
 
-    return await hass.config_entries.async_unload_platforms(
+    unloaded = await hass.config_entries.async_unload_platforms(
         entry,
         PLATFORMS,
     )
+
+    if (
+        unloaded
+        and DOMAIN in hass.data
+        and not hass.config_entries.async_entries(
+            DOMAIN,
+        )
+    ):
+        hass.data.pop(
+            DOMAIN,
+            None,
+        )
+
+    return unloaded
+
