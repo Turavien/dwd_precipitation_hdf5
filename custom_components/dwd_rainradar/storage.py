@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 
 from datetime import UTC, datetime
 
@@ -617,11 +618,22 @@ class Storage:
         if not metadata_path.exists():
             return ProductMetadata()
 
-        data = json.loads(
-            metadata_path.read_text(
-                encoding="utf-8",
-            ),
-        )
+        try:
+
+            data = json.loads(
+                metadata_path.read_text(
+                    encoding="utf-8",
+                ),
+            )
+
+        except json.JSONDecodeError:
+
+            _LOGGER.warning(
+                "Storage[%s]: invalid metadata.json, ignoring file",
+                product_key,
+            )
+
+            return ProductMetadata()
 
         return ProductMetadata(
             etag=data.get(
@@ -648,16 +660,36 @@ class Storage:
             / _METADATA_FILENAME
         )
 
-        metadata_path.write_text(
-            json.dumps(
-                {
-                    "etag": metadata.etag,
-                    "last_modified": metadata.last_modified,
-                },
-                indent=2,
-                sort_keys=True,
-            ),
+        temporary_path = metadata_path.with_suffix(
+            ".tmp",
+        )
+
+        content = json.dumps(
+            {
+                "etag": metadata.etag,
+                "last_modified": metadata.last_modified,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+
+        with temporary_path.open(
+            "w",
             encoding="utf-8",
+        ) as file:
+
+            file.write(
+                content,
+            )
+
+            file.flush()
+
+            os.fsync(
+                file.fileno(),
+            )
+
+        temporary_path.replace(
+            metadata_path,
         )
 
     def _build_cached_result(
