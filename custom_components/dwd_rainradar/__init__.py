@@ -1,6 +1,5 @@
 """DWD Rain Radar integration."""
 
-import logging
 from dataclasses import dataclass
 
 from homeassistant.config_entries import ConfigEntry
@@ -17,8 +16,6 @@ from .const import (
 from .registry import (
     async_remove_disabled_entities,
 )
-
-_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass

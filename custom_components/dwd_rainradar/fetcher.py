@@ -145,11 +145,6 @@ class Fetcher:
     ) -> FetchResult:
         """Download one DWD product."""
 
-        _LOGGER.debug(
-            "Downloading %s",
-            url,
-        )
-
         try:
 
             async with self._session.get(
@@ -195,21 +190,6 @@ class Fetcher:
 
             raise
 
-        if result.data is None:
-
-            _LOGGER.debug(
-                "Product %s not modified",
-                product.key,
-            )
-
-        else:
-
-            _LOGGER.debug(
-                "Downloaded %s (%d bytes)",
-                url,
-                len(result.data),
-            )
-
         return result
 
     async def async_download(
@@ -231,11 +211,6 @@ class Fetcher:
         since: datetime,
     ) -> list[RemoteProduct]:
         """Return all products available on the DWD server since a given time."""
-
-        _LOGGER.debug(
-            "Listing remote products in %s",
-            product.directory_url(),
-        )
 
         now = datetime.now(
             UTC,
@@ -308,14 +283,6 @@ class Fetcher:
             key=lambda remote_product: (
                 remote_product.timestamp,
             ),
-        )
-
-        _LOGGER.debug(
-            "Found %d remote %s products",
-            len(
-                remote_products,
-            ),
-            product.key,
         )
 
         return remote_products

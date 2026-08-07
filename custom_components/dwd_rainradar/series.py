@@ -16,7 +16,6 @@ from .products import Product
 from .storage import Storage
 from .timeline import (
     TimeInterval,
-    Timeline,
 )
 
 
@@ -39,9 +38,7 @@ class Series:
             TimeInterval
         ] | None = None
 
-        self._timeline: Timeline | None = None
-
-    async def _get_intervals(
+    async def intervals(
         self,
     ) -> list[
         TimeInterval
@@ -50,93 +47,20 @@ class Series:
 
         if self._intervals is None:
 
-            self._intervals = [
-                TimeInterval(
-                    valid_from=start,
-                    valid_until=end,
-                )
-                for start, end in await self._storage.async_list_intervals(
-                    self._product,
-                )
-            ]
-
-        return self._intervals
-
-    async def _intervals_before(
-        self,
-        timestamp: datetime,
-        count: int,
-    ) -> list[TimeInterval]:
-        """Return consecutive intervals ending before a timestamp."""
-
-        intervals = await self.intervals()
-
-        if not intervals:
-            return []
-
-        end_index: int | None = None
-
-        for index in range(
-            len(intervals) - 1,
-            -1,
-            -1,
-        ):
-
-            if (
-                intervals[index].valid_until
-                <= timestamp
-            ):
-                end_index = index
-                break
-
-        if end_index is None:
-            return []
-
-        start_index = max(
-            0,
-            end_index - count + 1,
-        )
-
-        selected = intervals[
-            start_index:end_index + 1
-        ]
-
-        if len(selected) != count:
-            return []
-
-        return selected
-
-    async def intervals(
-        self,
-    ) -> list[
-        TimeInterval
-    ]:
-        """Return all validity intervals."""
-
-        return await self._get_intervals()
-
-    async def timestamps(
-        self,
-    ) -> list[datetime]:
-        """Return all stored product timestamps."""
-
-        return [
-            interval.valid_from
-            for interval in await self.intervals()
-        ]
-
-    async def timeline(
-        self,
-    ) -> Timeline:
-        """Return the cached timeline."""
-
-        if self._timeline is None:
-
-            self._timeline = Timeline(
-                await self.intervals(),
+            self._intervals = sorted(
+                (
+                    TimeInterval(
+                        valid_from=start,
+                        valid_until=end,
+                    )
+                    for start, end in await self._storage.async_list_intervals(
+                        self._product,
+                    )
+                ),
+                key=lambda interval: interval.valid_until,
             )
 
-        return self._timeline
+        return self._intervals
 
     def _invalidate(
         self,
@@ -144,7 +68,6 @@ class Series:
         """Invalidate cached data."""
 
         self._intervals = None
-        self._timeline = None
 
     async def read_interval(
         self,
@@ -158,7 +81,7 @@ class Series:
             interval.valid_from,
         )
 
-        return self._decoder.decode(
+        decoded = self._decoder.decode(
             result,
             grid_cell,
         )
@@ -203,10 +126,12 @@ class Series:
     ) -> None:
         """Delete products older than the configured age."""
 
-        latest = await self.latest_interval()
+        intervals = await self.intervals()
 
-        if latest is None:
+        if not intervals:
             return
+
+        latest = intervals[-1]
 
         await self._storage.async_delete_old_files(
             self._product,
@@ -214,55 +139,6 @@ class Series:
         )
 
         self._invalidate()
-
-    async def latest_interval(
-        self,
-    ) -> TimeInterval | None:
-        """Return the newest validity interval."""
-
-        timeline = await self.timeline()
-
-        return timeline.latest()
-
-    async def hourly_intervals_before(
-        self,
-        timestamp: datetime,
-        count: int,
-    ) -> list[TimeInterval]:
-        """Return hourly intervals ending immediately before a timestamp."""
-
-        return await self._intervals_before(
-            timestamp,
-            count,
-        )
-
-    async def daily_intervals_before(
-        self,
-        timestamp: datetime,
-        count: int,
-    ) -> list[TimeInterval]:
-        """Return daily intervals ending immediately before a timestamp."""
-
-        return await self._intervals_before(
-            timestamp,
-            count,
-        )
-
-    async def read_latest_interval(
-        self,
-        grid_cell: tuple[int, int],
-    ) -> DecodedProduct | None:
-        """Read and decode the newest stored interval."""
-
-        interval = await self.latest_interval()
-
-        if interval is None:
-            return None
-
-        return await self.read_interval(
-            interval,
-            grid_cell,
-        )
 
     @property
     def product(

@@ -18,7 +18,7 @@ class ParsedValue:
 
     valid_until: datetime
 
-    value: float |None
+    value: float | None
 
 
 @dataclass(frozen=True, slots=True)

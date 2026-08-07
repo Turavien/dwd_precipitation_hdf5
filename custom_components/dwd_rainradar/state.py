@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import (
     datetime,
+    timedelta,
 )
 
 from .const import (
@@ -79,6 +80,60 @@ class State:
 
         return values[-1]
 
+    def _offset_minutes(
+        self,
+        value: ParsedValue,
+    ) -> int:
+        """Return the forecast offset in minutes."""
+
+        return int(
+            (
+                value.valid_from
+                - value.timestamp
+            ).total_seconds()
+            / 60
+        )
+
+    def _sum_until(
+        self,
+        key: str,
+        end_minutes: int,
+    ) -> float | None:
+        """Return the accumulated precipitation until one forecast horizon."""
+
+        values = self._values(
+            key,
+        )
+
+        if not values:
+            return None
+
+        horizon = (
+            values[0].timestamp
+            + timedelta(
+                minutes=end_minutes,
+            )
+        )
+
+        total = 0.0
+
+        found = False
+
+        for value in values:
+            if value.value is None:
+                continue
+
+            if value.valid_until > horizon:
+                continue
+
+            total += value.value
+            found = True
+
+        if not found:
+            return None
+
+        return total
+
     def _number_by_offset(
         self,
         key: str,
@@ -90,12 +145,8 @@ class State:
             key,
         ):
             if (
-                int(
-                    (
-                        value.valid_from
-                        - value.timestamp
-                    ).total_seconds()
-                    / 60
+                self._offset_minutes(
+                    value,
                 )
                 == offset_minutes
             ):
@@ -118,12 +169,8 @@ class State:
             if value.value is None:
                 continue
 
-            offset = int(
-                (
-                    value.valid_from
-                    - value.timestamp
-                ).total_seconds()
-                / 60
+            offset = self._offset_minutes(
+                value,
             )
 
             if offset < minimum_offset_minutes:
@@ -153,12 +200,8 @@ class State:
             ):
                 continue
 
-            offset = int(
-                (
-                    value.valid_from
-                    - value.timestamp
-                ).total_seconds()
-                / 60
+            offset = self._offset_minutes(
+                value,
             )
 
             if offset < minimum_offset_minutes:
@@ -269,7 +312,7 @@ class State:
     ) -> float | None:
         """Return forecast precipitation during the next hour."""
 
-        return self._number_by_offset(
+        return self._sum_until(
             "rs",
             60,
         )
@@ -280,25 +323,9 @@ class State:
     ) -> float | None:
         """Return forecast precipitation during the next two hours."""
 
-        next_hour = self._number_by_offset(
-            "rs",
-            60,
-        )
-
-        second_hour = self._number_by_offset(
+        return self._sum_until(
             "rs",
             120,
-        )
-
-        if (
-            next_hour is None
-            and second_hour is None
-        ):
-            return None
-
-        return (
-            (next_hour or 0.0)
-            + (second_hour or 0.0)
         )
 
     @property

@@ -4,14 +4,19 @@ from __future__ import annotations
 
 import asyncio
 
-from datetime import timedelta
+from datetime import (
+    datetime,
+    timedelta,
+)
 
 from homeassistant.core import HomeAssistant
-
 from .backfill import Backfill
 from .decoder import Decoder
 from .fetcher import Fetcher
 from .history import History
+from .models import (
+    DecodedProduct,
+)
 from .products import (
     RS,
     RV,
@@ -51,15 +56,10 @@ class Engine:
             self._decoder,
         )
 
-        self._state = State()
-
-        self._products = (
+        self._forecast_products = (
             RS,
             RV,
-            RW,
         )
-
-        self._update_task: asyncio.Task[State] | None = None
 
         self._backfill_completed: set[str] = set()
 
@@ -73,23 +73,9 @@ class Engine:
     ) -> State:
         """Update all configured DWD products."""
 
-        if self._update_task is not None:
-
-            return await self._update_task
-
-        self._update_task = asyncio.create_task(
-            self._async_update(
-                grid_cell,
-            )
+        return await self._async_update(
+            grid_cell,
         )
-
-        try:
-
-            return await self._update_task
-
-        finally:
-
-            self._update_task = None
 
     async def _async_update(
         self,
@@ -97,11 +83,11 @@ class Engine:
     ) -> State:
         """Execute one complete update."""
 
-        decoded_products = {}
+        state = State()
 
-        updated = False
+        decoded_products: dict[str, DecodedProduct] = {}
 
-        for product in self._products:
+        for product in self._forecast_products:
 
             metadata = await self._storage.async_read_metadata(
                 product.key,
@@ -116,9 +102,9 @@ class Engine:
 
                 try:
 
-                    result = await self._history.product(
+                    result = await self._storage.async_read_latest_product(
                         product,
-                    ).read_latest()
+                    )
 
                 except FileNotFoundError:
 
@@ -126,45 +112,84 @@ class Engine:
                         product,
                     )
 
-            decoded = self._decoder.decode(
+            decoded_products[
+                product.key
+            ] = self._decoder.decode(
                 result,
                 grid_cell,
             )
 
-            latest = decoded.values[-1]
-
             if result.downloaded:
 
-                await self._history.product(
-                    product,
-                ).store(
+                await self._storage.async_store_product(
                     result,
                 )
 
-                if (
-                    product.key
-                    not in self._backfill_completed
-                ):
+                await self._storage.async_delete_old_files(
+                    product,
+                    result.valid_until,
+                )
 
-                    self._backfill_completed.add(
-                        product.key,
-                    )
+        product = RW
 
-                    self._start_backfill(
-                        product,
-                        latest.valid_until
-                        - product.retention
-                        + product.interval / 2,
-                    )
+        metadata = await self._storage.async_read_metadata(
+            product.key,
+        )
 
-                updated = True
+        result = await self._fetcher.async_download(
+            product,
+            metadata,
+        )
 
-            decoded_products[
-                product.key
-            ] = decoded
+        if not result.downloaded:
 
-        if updated:
+            try:
+
+                result = await self._history.read_latest()
+
+            except FileNotFoundError:
+
+                result = await self._fetcher.async_download(
+                    product,
+                )
+
+        decoded = self._decoder.decode(
+            result,
+            grid_cell,
+        )
+
+        decoded_products[
+            product.key
+        ] = decoded
+
+        latest = decoded.values[-1]
+
+        if result.downloaded:
+
+            await self._history.store(
+                result,
+            )
+
             await self._history.prune()
+
+            if (
+                RW.key
+                not in self._backfill_completed
+            ):
+
+                since = (
+                    latest.valid_until
+                    - RW.retention
+                    + RW.interval / 2
+                )
+
+                self._backfill_completed.add(
+                    RW.key,
+                )
+
+                self._start_backfill(
+                    since,
+                )
 
         rw = decoded_products.get(
             "rw",
@@ -178,27 +203,25 @@ class Engine:
         ):
 
             rolling = await self._history.rolling_summaries(
-                rw_anchor=rw.values[-1].valid_until,
+                latest_rw=rw,
                 grid_cell=grid_cell,
             )
 
-        self._state.update(
+        state.update(
             decoded_products,
             rolling,
         )
 
-        return self._state
+        return state
 
     def _start_backfill(
         self,
-        product,
-        since,
+        since: datetime,
     ) -> None:
-        """Start one backfill task."""
+        """Start one RW backfill task."""
 
         task = asyncio.create_task(
             self._backfill.async_backfill(
-                product,
                 since,
             )
         )
@@ -210,4 +233,3 @@ class Engine:
         task.add_done_callback(
             self._backfill_tasks.discard,
         )
-

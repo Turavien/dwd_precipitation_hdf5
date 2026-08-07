@@ -9,7 +9,7 @@ from datetime import datetime
 from .decoder import Decoder
 from .fetcher import Fetcher
 from .history import History
-from .products import Product
+from .products import RW
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,25 +31,20 @@ class Backfill:
 
     async def async_backfill(
         self,
-        product: Product,
         since: datetime,
     ) -> None:
-        """Synchronize historical products."""
+        """Synchronize historical RW products."""
 
         remote_products = (
             await self._fetcher.async_list_remote_products(
-                product,
+                RW,
                 since,
             )
         )
 
-        history = self._history.product(
-            product,
-        )
-
         local_valid_from = {
             interval.valid_from
-            for interval in await history.intervals()
+            for interval in await self._history.intervals()
         }
 
         missing_products = [
@@ -61,26 +56,11 @@ class Backfill:
             )
         ]
 
-        max_downloads = {
-            "rs": 40,
-            "rv": 40,
-            "rw": 60,
-        }.get(
-            product.key,
-            40,
-        )
+        max_backfill_products = 300
 
         missing_products = missing_products[
-            :max_downloads
+            :max_backfill_products
         ]
-
-        _LOGGER.debug(
-            "Backfill downloading %d missing %s products",
-            len(
-                missing_products,
-            ),
-            product.key,
-        )
 
         for remote_product in missing_products:
 
@@ -97,7 +77,7 @@ class Backfill:
                     (0, 0),
                 )
 
-                await history.store(
+                await self._history.store(
                     result,
                 )
 
@@ -105,11 +85,9 @@ class Backfill:
 
                 _LOGGER.exception(
                     "Failed to backfill %s %s",
-                    product.key,
+                    RW.key,
                     remote_product.filename,
                 )
 
-        await history.prune(
-            product.retention,
-        )
+        await self._history.prune()
 
