@@ -86,6 +86,8 @@ class Series:
             grid_cell,
         )
 
+        return decoded
+
     async def read_latest(
         self,
     ) -> FetchResult:
