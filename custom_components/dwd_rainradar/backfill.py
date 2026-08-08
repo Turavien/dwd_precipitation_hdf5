@@ -51,7 +51,7 @@ class Backfill:
             remote_product
             for remote_product in remote_products
             if (
-                remote_product.timestamp
+                remote_product.timestamp - RW.interval
                 not in local_valid_from
             )
         ]

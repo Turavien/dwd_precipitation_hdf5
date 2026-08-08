@@ -224,21 +224,9 @@ class History:
             latest_rw.values[0].value,
         ]
 
-        hourly_entries: list[
-            tuple[
-                datetime,
-                datetime,
-                float | None,
-            ]
-        ] = [
-            (
-                latest_rw.values[0].valid_from,
-                latest_rw.values[0].valid_until,
-                latest_rw.values[0].value,
-            ),
-        ]
-
-        for interval in intervals:
+        for interval in reversed(
+            intervals,
+        ):
 
             decoded = await self._series.read_interval(
                 interval,
@@ -249,14 +237,6 @@ class History:
 
             hourly_values.append(
                 value.value,
-            )
-
-            hourly_entries.append(
-                (
-                    value.valid_from,
-                    value.valid_until,
-                    value.value,
-                )
             )
 
         result: list[
