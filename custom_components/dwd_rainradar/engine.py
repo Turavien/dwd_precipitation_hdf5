@@ -61,6 +61,8 @@ class Engine:
             RV,
         )
 
+        self._update_lock = asyncio.Lock()
+
         self._backfill_completed: set[str] = set()
 
         self._backfill_tasks: set[
@@ -73,9 +75,11 @@ class Engine:
     ) -> State:
         """Update all configured DWD products."""
 
-        return await self._async_update(
-            grid_cell,
-        )
+        async with self._update_lock:
+
+            return await self._async_update(
+                grid_cell,
+            )
 
     async def _async_update(
         self,

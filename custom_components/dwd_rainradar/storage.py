@@ -483,6 +483,16 @@ class Storage:
             product.key,
         ):
 
+            if not (
+                file_path.name.startswith(
+                    product.key,
+                )
+                and file_path.name.endswith(
+                    f".{product.file_extension}"
+                )
+            ):
+                continue
+
             try:
 
                 valid_from, valid_until = (
@@ -549,9 +559,20 @@ class Storage:
     ) -> FetchResult:
         """Read the newest stored DWD file."""
 
-        files = self._list_files(
-            product.key,
-        )
+        files = [
+            file_path
+            for file_path in self._list_files(
+                product.key,
+            )
+            if (
+                file_path.name.startswith(
+                    product.key,
+                )
+                and file_path.name.endswith(
+                    f".{product.file_extension}"
+                )
+            )
+        ]
 
         if not files:
             raise FileNotFoundError(
