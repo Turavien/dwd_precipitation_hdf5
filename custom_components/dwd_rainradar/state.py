@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import (
     datetime,
-    timedelta,
 )
 
 from .const import (
@@ -94,43 +93,26 @@ class State:
             / 60
         )
 
-    def _sum_until(
+    def _sum_rs_hours(
         self,
-        key: str,
-        end_minutes: int,
+        hours: int,
     ) -> float | None:
-        """Return the accumulated precipitation until one forecast horizon."""
-
-        values = self._values(
-            key,
-        )
-
-        if not values:
-            return None
-
-        horizon = (
-            values[0].timestamp
-            + timedelta(
-                minutes=end_minutes,
-            )
-        )
+        """Return precipitation for consecutive non-overlapping RS hours."""
 
         total = 0.0
 
-        found = False
+        for hour in range(
+            hours,
+        ):
+            value = self._number_by_offset(
+                "rs",
+                hour * 60,
+            )
 
-        for value in values:
-            if value.value is None:
-                continue
+            if value is None:
+                return None
 
-            if value.valid_until > horizon:
-                continue
-
-            total += value.value
-            found = True
-
-        if not found:
-            return None
+            total += value
 
         return total
 
@@ -153,6 +135,22 @@ class State:
                 return value.value
 
         return None
+
+    def _rv_intensity_by_offset(
+        self,
+        offset_minutes: int,
+    ) -> float | None:
+        """Return RV precipitation intensity in mm/h for one forecast offset."""
+
+        value = self._number_by_offset(
+            "rv",
+            offset_minutes,
+        )
+
+        if value is None:
+            return None
+
+        return value * 12
 
     def _maximum_by_offset(
         self,
@@ -184,20 +182,16 @@ class State:
 
         return maximum
 
-    def _first_positive_offset(
+    def _first_positive_rv_offset(
         self,
-        key: str,
         minimum_offset_minutes: int = 0,
     ) -> int | None:
-        """Return the first forecast offset with measurable precipitation."""
+        """Return the first RV forecast offset above the intensity threshold."""
 
         for value in self._values(
-            key,
+            "rv",
         ):
-            if (
-                value.value is None
-                or value.value < PRECIPITATION_THRESHOLD
-            ):
+            if value.value is None:
                 continue
 
             offset = self._offset_minutes(
@@ -205,6 +199,11 @@ class State:
             )
 
             if offset < minimum_offset_minutes:
+                continue
+
+            intensity = value.value * 12
+
+            if intensity < PRECIPITATION_THRESHOLD:
                 continue
 
             return offset
@@ -312,9 +311,8 @@ class State:
     ) -> float | None:
         """Return forecast precipitation during the next hour."""
 
-        return self._sum_until(
-            "rs",
-            60,
+        return self._sum_rs_hours(
+            1,
         )
 
     @property
@@ -323,53 +321,48 @@ class State:
     ) -> float | None:
         """Return forecast precipitation during the next two hours."""
 
-        return self._sum_until(
-            "rs",
-            120,
+        return self._sum_rs_hours(
+            2,
         )
 
     @property
     def intensity_now(
         self,
     ) -> float | None:
-        """Return the precipitation intensity during the next five minutes."""
+        """Return the precipitation intensity during the current five-minute interval."""
 
-        return self._number_by_offset(
-            "rv",
-            5,
+        return self._rv_intensity_by_offset(
+            0,
         )
 
     @property
     def intensity_in_5min(
         self,
     ) -> float | None:
-        """Return the precipitation intensity from minute 5 to minute 10."""
+        """Return the precipitation intensity during the five-minute interval starting in 5 minutes."""
 
-        return self._number_by_offset(
-            "rv",
-            10,
+        return self._rv_intensity_by_offset(
+            5,
         )
 
     @property
     def intensity_in_10min(
         self,
     ) -> float | None:
-        """Return the precipitation intensity from minute 10 to minute 15."""
+        """Return the precipitation intensity during the five-minute interval starting in 10 minutes."""
 
-        return self._number_by_offset(
-            "rv",
-            15,
+        return self._rv_intensity_by_offset(
+            10,
         )
 
     @property
     def intensity_in_15min(
         self,
     ) -> float | None:
-        """Return the precipitation intensity from minute 15 to minute 20."""
+        """Return the precipitation intensity during the five-minute interval starting in 15 minutes."""
 
-        return self._number_by_offset(
-            "rv",
-            20,
+        return self._rv_intensity_by_offset(
+            15,
         )
 
     @property
@@ -378,10 +371,15 @@ class State:
     ) -> float | None:
         """Return the maximum forecast precipitation intensity."""
 
-        return self._maximum_by_offset(
+        maximum = self._maximum_by_offset(
             "rv",
             5,
         )
+
+        if maximum is None:
+            return None
+
+        return maximum * 12
 
     @property
     def precipitation_start(
@@ -389,8 +387,7 @@ class State:
     ) -> int | None:
         """Return minutes until precipitation starts."""
 
-        return self._first_positive_offset(
-            "rv",
+        return self._first_positive_rv_offset(
             5,
         )
 
