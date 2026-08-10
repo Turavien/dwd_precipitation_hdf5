@@ -388,7 +388,7 @@ class State:
         """Return minutes until precipitation starts."""
 
         return self._first_positive_rv_offset(
-            5,
+            0,
         )
 
     @property
