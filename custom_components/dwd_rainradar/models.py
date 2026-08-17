@@ -9,6 +9,15 @@ from .products import Product
 
 
 @dataclass(frozen=True, slots=True)
+class TimeInterval:
+    """Validity interval of one stored product."""
+
+    valid_from: datetime
+
+    valid_until: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class ParsedValue:
     """One parsed precipitation value."""
 

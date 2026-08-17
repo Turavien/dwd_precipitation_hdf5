@@ -3,6 +3,7 @@
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
 ![GitHub release](https://img.shields.io/github/v/release/Turavien/dwd_rainradar)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Turavien/dwd_rainradar)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.3%2B-18BCF2?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 [![Open your Home Assistant instance and open the repository inside HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Turavien&repository=dwd_rainradar)
@@ -62,8 +63,8 @@ The integration is fully configurable through the Home Assistant user interface.
 * Automatic radar grid selection for the configured location
 * Optional sensor groups
 * Rolling precipitation totals up to 48 hours
-* Full ConfigFlow and OptionsFlow support
-* Automatic cleanup of disabled entities
+* Setup and options entirely through the Home Assistant user interface
+* Automatic cleanup of entities no longer provided
 * English and German translations
 
 ## How it works
@@ -97,20 +98,18 @@ It provides the following entities:
 * Expected precipitation during the next hour [mm]
 * Expected precipitation during the next 2 hours [mm]
 
-### Current precipitation
+### Precipitation intensity
 
 * Current precipitation intensity [mm/h]
 * Expected precipitation intensity in 5 minutes [mm/h]
 * Expected precipitation intensity in 10 minutes [mm/h]
 * Expected precipitation intensity in 15 minutes [mm/h]
+* Maximum expected precipitation intensity during the next 2 hours [mm/h]
 
-### Rain event
+### Precipitation event
 
-* Time until next precipitation [min]
-* Expected max. precipitation intensity next 2 hours [mm/h]
+* Time until next expected precipitation [min]
 * Precipitation active (binary sensor)
-
-This sensor group combines information about the next expected precipitation together with the highest forecast precipitation intensity within the three-hour RADVOR forecast period.
 
 ## Data Sources
 
@@ -118,21 +117,21 @@ The integration currently uses three official DWD Open Data radar products, each
 
 ### RADOLAN RW
 
-Radar-based precipitation total of the previous hour.
+Gauge-adjusted radar-based precipitation total over one hour.
 
-The integration stores consecutive hourly RW products locally and derives all historical precipitation totals from this history (1 h, 2 h, 3 h, 6 h, 9 h, 12 h, 24 h, 36 h and 48 h).
+RW is published for overlapping time windows. The integration keeps the required RW history locally and selects a continuous sequence of non-overlapping hourly intervals for each calculation. This provides precipitation totals for 1 h, 2 h, 3 h, 6 h, 9 h, 12 h, 24 h, 36 h and 48 h.
 
 ### RADVOR RS
 
-Radar-based accumulated precipitation forecast covering the next 120 minutes with a temporal resolution of five minutes.
+Radar-based one-hour precipitation forecast provided every five minutes for different forecast times.
 
-This product provides the forecast precipitation totals for the next 1 and 2 hours.
+For the next hour, the integration uses the interval from now to +60 minutes. For the next two hours, it adds the two non-overlapping intervals 0–60 and 60–120 minutes.
 
 ### RADVOR RV
 
-Radar-based precipitation intensity forecast covering the next 120 minutes with a temporal resolution of five minutes.
+Radar-based precipitation forecast in five-minute intervals covering the next 120 minutes.
 
-This product provides the current and forecast precipitation intensities and is used to derive the binary sensor **Precipitation active** and the time until the next precipitation.
+The integration uses the interval ending at the current time for the current intensity. Forecasts in 5, 10 and 15 minutes refer to the five-minute interval ending at that time. The precipitation amount of each interval is converted to an equivalent intensity in mm/h. These values also provide the binary sensor **Precipitation active**, the time until precipitation is next expected and the maximum expected intensity.
 
 ## Installation via HACS
 
@@ -150,6 +149,12 @@ After the restart:
 4. Enter or select the desired location.
 5. Select the sensor groups you want to create.
 6. Finish the configuration.
+
+## Removal
+
+The integration can be removed from **Settings → Devices & Services → DWD Rain Radar** using the menu of the corresponding entry.
+
+Locally stored radar data remains in `/config/dwd_rainradar`. If all integration entries have been removed and the data is no longer needed, this directory can be deleted manually.
 
 ## Project History
 

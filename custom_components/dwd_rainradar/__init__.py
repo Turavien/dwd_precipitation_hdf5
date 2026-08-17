@@ -31,17 +31,28 @@ async def async_setup_entry(
 ) -> bool:
     """Set up DWD Rain Radar from a config entry."""
 
+    await async_remove_disabled_entities(
+        hass,
+        entry,
+    )
+
     domain_data = hass.data.setdefault(
         DOMAIN,
         {},
     )
 
-    engine: Engine = domain_data.setdefault(
+    engine = domain_data.get(
         "engine",
-        Engine(
-            hass,
-        ),
     )
+
+    if engine is None:
+        engine = Engine(
+            hass,
+        )
+
+        domain_data[
+            "engine"
+        ] = engine
 
     coordinator = UpdateCoordinator(
         hass,
@@ -49,7 +60,16 @@ async def async_setup_entry(
         engine,
     )
 
-    await coordinator.async_config_entry_first_refresh()
+    setup_completed = False
+
+    try:
+        await coordinator.async_config_entry_first_refresh()
+
+        setup_completed = True
+
+    finally:
+        if not setup_completed:
+            coordinator.unregister_engine()
 
     entry.runtime_data = MyData(
         coordinator,
@@ -75,20 +95,23 @@ async def async_migrate_entry(
 ) -> bool:
     """Migrate old config entries."""
 
-    if entry.minor_version < 2:
+    data = dict(
+        entry.data
+    )
 
-        data = dict(entry.data)
+    if entry.minor_version < 2:
 
         data.setdefault(
             CONF_SENSOR_GROUPS,
             DEFAULT_SENSOR_GROUPS,
         )
 
-        hass.config_entries.async_update_entry(
-            entry,
-            data=data,
-            minor_version=2,
-        )
+    hass.config_entries.async_update_entry(
+        entry,
+        data=data,
+        unique_id=None,
+        minor_version=4,
+    )
 
     return True
 
@@ -96,13 +119,8 @@ async def async_migrate_entry(
 async def update_listener(
     hass: HomeAssistant,
     entry: ConfigEntry,
-) -> bool:
+) -> None:
     """Handle config entry updates."""
-
-    await async_remove_disabled_entities(
-        hass,
-        entry,
-    )
 
     await hass.config_entries.async_reload(
         entry.entry_id,
@@ -120,17 +138,36 @@ async def async_unload_entry(
         PLATFORMS,
     )
 
-    if (
-        unloaded
-        and DOMAIN in hass.data
-        and not hass.config_entries.async_entries(
+    if not unloaded:
+        return False
+
+    runtime_data: MyData = entry.runtime_data
+
+    runtime_data.coordinator.unregister_engine()
+
+    if not hass.config_entries.async_loaded_entries(
+        DOMAIN,
+    ):
+
+        domain_data = hass.data.get(
             DOMAIN,
         )
-    ):
+
+        if domain_data is not None:
+
+            engine = domain_data.get(
+                "engine",
+            )
+
+            if isinstance(
+                engine,
+                Engine,
+            ):
+                await engine.async_shutdown()
+
         hass.data.pop(
             DOMAIN,
             None,
         )
 
-    return unloaded
-
+    return True

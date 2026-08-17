@@ -16,7 +16,11 @@ async def async_remove_disabled_entities(
     hass: HomeAssistant,
     entry: ConfigEntry,
 ) -> None:
-    """Remove entities that belong to disabled sensor groups."""
+    """Remove entities no longer offered by this config entry."""
+
+    registry = er.async_get(
+        hass,
+    )
 
     enabled_groups = set(
         entry.options.get(
@@ -28,35 +32,20 @@ async def async_remove_disabled_entities(
         )
     )
 
-    registry = er.async_get(
-        hass,
-    )
+    active_unique_ids = {
+        f"{entry.entry_id}_{entity_key}"
+        for group, entity_keys in ENTITY_GROUPS.items()
+        if group in enabled_groups
+        for entity_key in entity_keys
+    }
 
-    for group, entity_keys in ENTITY_GROUPS.items():
-
-        if group in enabled_groups:
+    for entity in er.async_entries_for_config_entry(
+        registry,
+        entry.entry_id,
+    ):
+        if entity.unique_id in active_unique_ids:
             continue
 
-        for entity_key in entity_keys:
-
-            unique_id = (
-                f"{entry.entry_id}_{entity_key}"
-            )
-
-            for platform in (
-                "sensor",
-                "binary_sensor",
-            ):
-
-                entity_id = registry.async_get_entity_id(
-                    platform,
-                    entry.domain,
-                    unique_id,
-                )
-
-                if entity_id is None:
-                    continue
-
-                registry.async_remove(
-                    entity_id,
-                )
+        registry.async_remove(
+            entity.entity_id,
+        )

@@ -55,6 +55,17 @@ class Storage:
             list[Path],
         ] = {}
 
+        self._interval_cache: dict[
+            str,
+            dict[
+                datetime,
+                tuple[
+                    Path,
+                    datetime,
+                ],
+            ],
+        ] = {}
+
     def get_product_directory(
         self,
         product_key: str,
@@ -124,20 +135,6 @@ class Storage:
             ),
         )
 
-    def _get_file_path(
-        self,
-        product_key: str,
-        filename: str,
-    ) -> Path:
-        """Return the path of one stored DWD file."""
-
-        return (
-            self.get_product_directory(
-                product_key,
-            )
-            / filename
-        )
-
     def _get_metadata_path(
         self,
         product_key: str,
@@ -149,17 +146,6 @@ class Storage:
                 product_key,
             )
             / _METADATA_FILENAME
-        )
-
-    async def async_ensure_product_directory(
-        self,
-        product_key: str,
-    ) -> Path:
-        """Ensure that the directory for a product exists."""
-
-        return await self._hass.async_add_executor_job(
-            self._ensure_product_directory,
-            product_key,
         )
 
     async def async_store_file(
@@ -179,30 +165,6 @@ class Storage:
         return await self._hass.async_add_executor_job(
             self._store_file,
             result,
-        )
-
-    async def async_list_files(
-        self,
-        product_key: str,
-    ) -> list[Path]:
-        """Return all stored files for one product."""
-
-        return await self._hass.async_add_executor_job(
-            self._list_files,
-            product_key,
-        )
-
-    async def async_get_product_interval(
-        self,
-        product: Product,
-        path: Path,
-    ) -> tuple[datetime, datetime]:
-        """Return the validity interval encoded in a stored filename."""
-
-        return await self._hass.async_add_executor_job(
-            self._parse_product_interval,
-            product,
-            path,
         )
 
     async def async_list_intervals(
@@ -238,19 +200,6 @@ class Storage:
         return await self._hass.async_add_executor_job(
             self._read_latest_product,
             product,
-        )
-
-    async def async_delete_product(
-        self,
-        product: Product,
-        valid_from: datetime,
-    ) -> None:
-        """Delete one stored file."""
-
-        await self._hass.async_add_executor_job(
-            self._delete_product,
-            product,
-            valid_from,
         )
 
     async def async_delete_old_files(
@@ -293,8 +242,10 @@ class Storage:
     async def async_store_product(
         self,
         result: FetchResult,
+        *,
+        update_metadata: bool = True,
     ) -> None:
-        """Store one downloaded product including metadata."""
+        """Store one downloaded product."""
 
         if (
             result.valid_from is None
@@ -308,10 +259,11 @@ class Storage:
             result,
         )
 
-        await self.async_write_metadata(
-            result.product.key,
-            result.metadata,
-        )
+        if update_metadata:
+            await self.async_write_metadata(
+                result.product.key,
+                result.metadata,
+            )
 
     def _ensure_product_directory(
         self,
@@ -378,12 +330,65 @@ class Storage:
         self,
         product_key: str,
     ) -> None:
-        """Invalidate cached file list."""
+        """Invalidate cached file list and interval index."""
 
         self._file_cache.pop(
             product_key,
             None,
         )
+
+        self._interval_cache.pop(
+            product_key,
+            None,
+        )
+
+    def _get_interval_index(
+        self,
+        product: Product,
+    ) -> dict[
+        datetime,
+        tuple[
+            Path,
+            datetime,
+        ],
+    ]:
+        """Return stored files indexed by validity start."""
+
+        cached = self._interval_cache.get(
+            product.key,
+        )
+
+        if cached is not None:
+            return cached
+
+        index: dict[
+            datetime,
+            tuple[
+                Path,
+                datetime,
+            ],
+        ] = {}
+
+        for (
+            file_path,
+            valid_from,
+            valid_until,
+        ) in self._iter_product_files(
+            product,
+            skip_invalid=True,
+        ):
+            index[
+                valid_from
+            ] = (
+                file_path,
+                valid_until,
+            )
+
+        self._interval_cache[
+            product.key
+        ] = index
+
+        return index
 
     def _list_intervals(
         self,
@@ -391,20 +396,23 @@ class Storage:
     ) -> list[tuple[datetime, datetime]]:
         """Return all stored validity intervals for a product."""
 
-        intervals = [
+        index = self._get_interval_index(
+            product,
+        )
+
+        intervals = sorted(
             (
                 valid_from,
                 valid_until,
             )
             for (
-                _,
                 valid_from,
-                valid_until,
-            ) in self._iter_product_files(
-                product,
-                skip_invalid=True,
-            )
-        ]
+                (
+                    _,
+                    valid_until,
+                ),
+            ) in index.items()
+        )
 
         _LOGGER.debug(
             "Storage[%s]: parsed %d intervals",
@@ -453,9 +461,24 @@ class Storage:
 
         file_path = directory / filename
 
-        file_path.write_bytes(
-            result.data,
+        temporary_path = file_path.with_suffix(
+            f"{file_path.suffix}.tmp"
         )
+
+        try:
+            temporary_path.write_bytes(
+                result.data,
+            )
+
+            temporary_path.replace(
+                file_path,
+            )
+
+        except Exception:
+            temporary_path.unlink(
+                missing_ok=True,
+            )
+            raise
 
         _LOGGER.debug(
             "Storage[%s]: stored %s (%s -> %s)",
@@ -528,65 +551,18 @@ class Storage:
     ) -> FetchResult:
         """Read one stored DWD file."""
 
-        for (
-            file_path,
-            start,
-            end,
-        ) in self._iter_product_files(
+        entry = self._get_interval_index(
             product,
-        ):
-
-            if start != valid_from:
-                continue
-
-            return self._build_cached_result(
-                product,
-                start,
-                end,
-                file_path.read_bytes(),
-                self._read_metadata(
-                    product.key,
-                ),
-            )
-
-        raise FileNotFoundError(
-            f"No stored file for {product.key} at {valid_from}."
+        ).get(
+            valid_from,
         )
 
-    def _read_latest_product(
-        self,
-        product: Product,
-    ) -> FetchResult:
-        """Read the newest stored DWD file."""
-
-        files = [
-            file_path
-            for file_path in self._list_files(
-                product.key,
-            )
-            if (
-                file_path.name.startswith(
-                    product.key,
-                )
-                and file_path.name.endswith(
-                    f".{product.file_extension}"
-                )
-            )
-        ]
-
-        if not files:
+        if entry is None:
             raise FileNotFoundError(
-                f"No stored file for {product.key}"
+                f"No stored file for {product.key} at {valid_from}."
             )
 
-        file_path = files[-1]
-
-        valid_from, valid_until = (
-            self._parse_product_interval(
-                product,
-                file_path,
-            )
-        )
+        file_path, valid_until = entry
 
         return self._build_cached_result(
             product,
@@ -598,33 +574,38 @@ class Storage:
             ),
         )
 
-    def _delete_product(
+    def _read_latest_product(
         self,
         product: Product,
-        valid_from: datetime,
-    ) -> None:
-        """Delete one stored file."""
+    ) -> FetchResult:
+        """Read the newest stored DWD file."""
 
-        for (
-            file_path,
-            start,
-            _,
-        ) in self._iter_product_files(
+        index = self._get_interval_index(
             product,
-        ):
+        )
 
-            if start != valid_from:
-                continue
-
-            file_path.unlink(
-                missing_ok=True,
+        if not index:
+            raise FileNotFoundError(
+                f"No stored file for {product.key}"
             )
 
-            self._invalidate_file_cache(
+        valid_from, (
+            file_path,
+            valid_until,
+        ) = max(
+            index.items(),
+            key=lambda item: item[1][1],
+        )
+
+        return self._build_cached_result(
+            product,
+            valid_from,
+            valid_until,
+            file_path.read_bytes(),
+            self._read_metadata(
                 product.key,
-            )
-
-            return
+            ),
+        )
 
     def _read_metadata(
         self,
@@ -647,10 +628,26 @@ class Storage:
                 ),
             )
 
-        except json.JSONDecodeError:
+        except (
+            OSError,
+            UnicodeError,
+            json.JSONDecodeError,
+        ):
 
             _LOGGER.warning(
                 "Storage[%s]: invalid metadata.json, ignoring file",
+                product_key,
+            )
+
+            return ProductMetadata()
+
+        if not isinstance(
+            data,
+            dict,
+        ):
+
+            _LOGGER.warning(
+                "Storage[%s]: invalid metadata.json structure, ignoring file",
                 product_key,
             )
 
@@ -748,6 +745,7 @@ class Storage:
             valid_until,
         ) in self._iter_product_files(
             product,
+            skip_invalid=True,
         ):
 
             if valid_until < cutoff:
@@ -767,13 +765,13 @@ class Storage:
 
                 deleted += 1
 
-                self._invalidate_file_cache(
-                    product.key,
-                )
+        if deleted:
+            self._invalidate_file_cache(
+                product.key,
+            )
 
         _LOGGER.debug(
             "Storage[%s]: prune finished, deleted=%d",
             product.key,
             deleted,
         )
-

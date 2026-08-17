@@ -17,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 class Backfill:
     """Synchronize missing historical products."""
 
+    _MAX_BACKFILL_PRODUCTS = 300
+
     def __init__(
         self,
         fetcher: Fetcher,
@@ -32,15 +34,31 @@ class Backfill:
     async def async_backfill(
         self,
         since: datetime,
-    ) -> None:
+    ) -> tuple[
+        bool,
+        bool,
+    ]:
         """Synchronize historical RW products."""
 
-        remote_products = (
-            await self._fetcher.async_list_remote_products(
-                RW,
-                since,
+        try:
+            remote_products = (
+                await self._fetcher.async_list_remote_products(
+                    RW,
+                    since,
+                )
             )
-        )
+
+        except Exception:
+
+            _LOGGER.exception(
+                "Failed to list remote %s products",
+                RW.key,
+            )
+
+            return (
+                False,
+                False,
+            )
 
         local_valid_from = {
             interval.valid_from
@@ -56,11 +74,12 @@ class Backfill:
             )
         ]
 
-        max_backfill_products = 300
-
         missing_products = missing_products[
-            :max_backfill_products
+            :self._MAX_BACKFILL_PRODUCTS
         ]
+
+        completed = True
+        changed = False
 
         for remote_product in missing_products:
 
@@ -79,9 +98,14 @@ class Backfill:
 
                 await self._history.store(
                     result,
+                    update_metadata=False,
                 )
 
+                changed = True
+
             except Exception:
+
+                completed = False
 
                 _LOGGER.exception(
                     "Failed to backfill %s %s",
@@ -89,5 +113,19 @@ class Backfill:
                     remote_product.filename,
                 )
 
-        await self._history.prune()
+        try:
+            await self._history.prune()
 
+        except Exception:
+
+            completed = False
+
+            _LOGGER.exception(
+                "Failed to prune %s history",
+                RW.key,
+            )
+
+        return (
+            completed,
+            changed,
+        )

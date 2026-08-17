@@ -12,94 +12,116 @@
       },
       "sensor_groups": {
         "title": "Select sensor groups",
-        "description": "Select which sensor groups should be created.\n\nNote: Rolling precipitation totals are calculated from hourly RADOLAN data.",
+        "description": "Select which sensor groups should be created.\n\nNote: Rolling precipitation totals are calculated from RADOLAN RW.",
         "data": {
           "sensor_groups": "Sensor groups"
         }
-      },
-      "init": {
-        "title": "Sensor groups",
-        "data": {
-          "sensor_groups": "Sensor groups"
-        },
-        "description": "Note: Rolling precipitation totals are calculated from hourly and 24-hourly RADOLAN data"
       }
     },
     "error": {
       "invalid_name": "Invalid name",
       "invalid_coordinates": "Invalid coordinates",
       "outside_dwd_coverage": "Location is outside DWD radar coverage"
+    },
+    "abort": {
+      "already_configured": "This location is already configured."
+    }
+  },
+
+  "options": {
+    "step": {
+      "init": {
+        "title": "Edit location",
+        "description": "Change the integration name and location.",
+        "data": {
+          "name": "Name",
+          "coordinates": "Coordinates"
+        }
+      },
+      "sensor_groups": {
+        "title": "Select sensor groups",
+        "description": "Select which sensor groups should be created.\n\nNote: Rolling precipitation totals are calculated from RADOLAN RW.",
+        "data": {
+          "sensor_groups": "Sensor groups"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "Invalid name",
+      "invalid_coordinates": "Invalid coordinates",
+      "outside_dwd_coverage": "Location is outside DWD radar coverage",
+      "already_configured": "This location is already configured."
     }
   },
 
   "selector": {
     "sensor_groups": {
       "options": {
-        "current": "Current precipitation",
-        "event": "Precipitation event",
-        "forecast": "Forecast totals",
-        "history": "Historical totals",
-        "rolling": "Rolling totals"
+        "current": "Intensity (now, +5, +10, +15 min, maximum next 2 h)",
+        "event": "Precipitation event (active, next precipitation)",
+        "forecast": "Forecast totals (next 1 and 2 h)",
+        "history": "Total last 1 h",
+        "rolling": "Rolling totals (last 2–48 h)"
       }
     }
   },
   "entity": {
     "sensor": {
       "precipitation_last_1h": {
-        "name": "Amount last 1h"
+        "name": "Amount last 1 h"
       },
       "precipitation_last_2h": {
-        "name": "Amount last 2h"
+        "name": "Amount last 2 h"
       },
       "precipitation_last_3h": {
-        "name": "Amount last 3h"
+        "name": "Amount last 3 h"
       },
       "precipitation_last_6h": {
-        "name": "Amount last 6h"
+        "name": "Amount last 6 h"
       },
       "precipitation_last_9h": {
-        "name": "Amount last 9h"
+        "name": "Amount last 9 h"
       },
       "precipitation_last_12h": {
-        "name": "Amount last 12h"
+        "name": "Amount last 12 h"
       },
       "precipitation_last_24h": {
-        "name": "Amount last 24h"
+        "name": "Amount last 24 h"
       },
       "precipitation_last_36h": {
-        "name": "Amount last 36h"
+        "name": "Amount last 36 h"
       },
       "precipitation_last_48h": {
-        "name": "Amount last 48h"
+        "name": "Amount last 48 h"
       },
       "precipitation_next_1h": {
-        "name": "Expected amount next 1h"
+        "name": "Expected amount next 1 h"
       },
       "precipitation_next_2h": {
-        "name": "Expected amount next 2h"
+        "name": "Expected amount next 2 h"
       },
       "intensity_now": {
         "name": "Current intensity"
       },
       "intensity_in_5min": {
-        "name": "Expected intensity in 5min"
+        "name": "Expected intensity in 5 min"
       },
       "intensity_in_10min": {
-        "name": "Expected intensity in 10min"
+        "name": "Expected intensity in 10 min"
       },
       "intensity_in_15min": {
-        "name": "Expected intensity in 15min"
+        "name": "Expected intensity in 15 min"
       },
       "precipitation_start": {
-        "name": "Expected precipitation in"
+        "name": "Precipitation expected within"
       },
       "maximum_precipitation_intensity": {
-        "name": "Expected max. intensity next 2h"
+        "name": "Max. expected intensity next 2 h"
       }
     },
     "binary_sensor": {
       "precipitation_active": {
-        "name": "Current precipitation"
+        "name": "Precipitation active"
       }
     }
   }

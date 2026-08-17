@@ -76,20 +76,6 @@ class Fetcher:
 
         return headers
 
-    def _build_remote_product(
-        self,
-        product: Product,
-        filename: str,
-        timestamp: datetime,
-    ) -> RemoteProduct:
-        """Create one remote product."""
-
-        return RemoteProduct(
-            product=product,
-            timestamp=timestamp,
-            filename=filename,
-        )
-
     def _parse_remote_timestamp(
         self,
         product: Product,
@@ -263,16 +249,27 @@ class Fetcher:
             ):
                 continue
 
-            timestamp = self._parse_remote_timestamp(
-                product,
-                filename,
-            )
+            try:
+                timestamp = self._parse_remote_timestamp(
+                    product,
+                    filename,
+                )
+
+            except ValueError:
+
+                _LOGGER.warning(
+                    "Ignoring unexpected %s filename: %s",
+                    product.key,
+                    filename,
+                )
+
+                continue
 
             if timestamp < since:
                 continue
 
             remote_products.append(
-                self._build_remote_product(
+                RemoteProduct(
                     product=product,
                     filename=filename,
                     timestamp=timestamp,

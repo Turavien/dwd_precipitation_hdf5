@@ -1,8 +1,6 @@
-"""Config flow for the DWD Precipitation integration."""
+"""Config flow for the DWD Rain Radar integration."""
 
 from __future__ import annotations
-
-import logging
 
 import voluptuous as vol
 from homeassistant import config_entries
@@ -26,11 +24,7 @@ from .const import (
 from .radar import get_dwd_grid_cell
 
 
-_LOGGER = logging.getLogger(__name__)
-
-
 def _sensor_group_selector(
-    default: list[str],
 ) -> selector.SelectSelector:
     """Return the sensor group selector."""
 
@@ -115,13 +109,20 @@ def _validate_location(
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle the config flow for DWD Precipitation."""
+    """Handle the config flow for DWD Rain Radar."""
 
     VERSION = 1
 
-    MINOR_VERSION = 2
+    MINOR_VERSION = 4
 
-    _entry_data: dict = {}
+    def __init__(
+        self,
+    ) -> None:
+        """Initialize the config flow."""
+
+        super().__init__()
+
+        self._entry_data: dict = {}
 
     async def async_step_user(self, user_input=None) -> FlowResult:
         """Handle the user step."""
@@ -135,6 +136,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
             if not errors:
+
+                self._async_abort_entries_match(
+                    {
+                        "latitude": data[
+                            "latitude"
+                        ],
+                        "longitude": data[
+                            "longitude"
+                        ],
+                    }
+                )
 
                 self._entry_data = data
 
@@ -160,14 +172,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_SENSOR_GROUPS
             ]
 
-            await self.async_set_unique_id(
-                self._entry_data[
-                    CONF_NAME
-                ]
-            )
-
-            self._abort_if_unique_id_configured()
-
             return self.async_create_entry(
                 title=self._entry_data[
                     CONF_NAME
@@ -182,9 +186,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(
                         CONF_SENSOR_GROUPS,
                         default=DEFAULT_SENSOR_GROUPS,
-                    ): _sensor_group_selector(
-                        DEFAULT_SENSOR_GROUPS,
-                    ),
+                    ): _sensor_group_selector(),
                 }
             ),
             description_placeholders={},
@@ -260,9 +262,38 @@ class OptionsFlow(config_entries.OptionsFlow):
 
             if not errors:
 
-                self._updated_location = data
+                duplicate_location = any(
+                    entry.entry_id
+                    != self._config_entry.entry_id
+                    and entry.data.get(
+                        "latitude"
+                    )
+                    == data[
+                        "latitude"
+                    ]
+                    and entry.data.get(
+                        "longitude"
+                    )
+                    == data[
+                        "longitude"
+                    ]
+                    for entry
+                    in self.hass.config_entries.async_entries(
+                        DOMAIN,
+                    )
+                )
 
-                return await self.async_step_sensor_groups()
+                if duplicate_location:
+
+                    errors["base"] = (
+                        "already_configured"
+                    )
+
+                else:
+
+                    self._updated_location = data
+
+                    return await self.async_step_sensor_groups()
 
         return self.async_show_form(
             step_id="init",
@@ -346,9 +377,7 @@ class OptionsFlow(config_entries.OptionsFlow):
                     vol.Required(
                         CONF_SENSOR_GROUPS,
                         default=enabled_groups,
-                    ): _sensor_group_selector(
-                        enabled_groups,
-                    ),
+                    ): _sensor_group_selector(),
                 }
             ),
         )

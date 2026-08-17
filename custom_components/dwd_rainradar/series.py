@@ -2,21 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import (
-    datetime,
-    timedelta,
-)
+from datetime import timedelta
 
 from .decoder import Decoder
 from .models import (
     DecodedProduct,
     FetchResult,
+    TimeInterval,
 )
 from .products import Product
 from .storage import Storage
-from .timeline import (
-    TimeInterval,
-)
 
 
 class Series:
@@ -69,24 +64,28 @@ class Series:
 
         self._intervals = None
 
-    async def read_interval(
+    async def read_interval_cells(
         self,
         interval: TimeInterval,
-        grid_cell: tuple[int, int],
-    ) -> DecodedProduct:
-        """Read and decode one stored product."""
+        grid_cells: tuple[
+            tuple[int, int],
+            ...
+        ],
+    ) -> dict[
+        tuple[int, int],
+        DecodedProduct,
+    ]:
+        """Read and decode one stored product for multiple grid cells."""
 
         result = await self._storage.async_read_product(
             self._product,
             interval.valid_from,
         )
 
-        decoded = self._decoder.decode(
+        return self._decoder.decode_cells(
             result,
-            grid_cell,
+            grid_cells,
         )
-
-        return decoded
 
     async def read_latest(
         self,
@@ -100,24 +99,14 @@ class Series:
     async def store(
         self,
         result: FetchResult,
+        *,
+        update_metadata: bool = True,
     ) -> None:
         """Store a downloaded product."""
 
         await self._storage.async_store_product(
             result,
-        )
-
-        self._invalidate()
-
-    async def delete(
-        self,
-        interval: TimeInterval,
-    ) -> None:
-        """Delete one stored product."""
-
-        await self._storage.async_delete_product(
-            self._product,
-            interval.valid_from,
+            update_metadata=update_metadata,
         )
 
         self._invalidate()
@@ -141,11 +130,3 @@ class Series:
         )
 
         self._invalidate()
-
-    @property
-    def product(
-        self,
-    ) -> Product:
-        """Return the associated product."""
-
-        return self._product

@@ -11,49 +11,25 @@ from .decoder import Decoder
 from .models import (
     DecodedProduct,
     FetchResult,
+    TimeInterval,
 )
 from .products import RW
 from .series import Series
 from .storage import Storage
-from .timeline import TimeInterval
 
 
 class History:
     """Factory for product histories."""
 
     _ROLLING_WINDOWS = (
-        (
-            timedelta(),
-            timedelta(hours=2),
-        ),
-        (
-            timedelta(),
-            timedelta(hours=3),
-        ),
-        (
-            timedelta(),
-            timedelta(hours=6),
-        ),
-        (
-            timedelta(),
-            timedelta(hours=9),
-        ),
-        (
-            timedelta(),
-            timedelta(hours=12),
-        ),
-        (
-            timedelta(),
-            timedelta(hours=24),
-        ),
-        (
-            timedelta(),
-            timedelta(hours=36),
-        ),
-        (
-            timedelta(),
-            timedelta(hours=48),
-        ),
+        ("rw_2h", 2),
+        ("rw_3h", 3),
+        ("rw_6h", 6),
+        ("rw_9h", 9),
+        ("rw_12h", 12),
+        ("rw_24h", 24),
+        ("rw_36h", 36),
+        ("rw_48h", 48),
     )
 
     def __init__(
@@ -79,21 +55,14 @@ class History:
     async def store(
         self,
         result: FetchResult,
+        *,
+        update_metadata: bool = True,
     ) -> None:
         """Store a downloaded product."""
 
         await self._series.store(
             result,
-        )
-
-    async def delete(
-        self,
-        interval: TimeInterval,
-    ) -> None:
-        """Delete one stored product."""
-
-        await self._series.delete(
-            interval,
+            update_metadata=update_metadata,
         )
 
     async def intervals(
@@ -111,9 +80,7 @@ class History:
         """Prune the stored history."""
 
         await self._series.prune(
-            timedelta(
-                hours=49,
-            ),
+            RW.retention,
         )
 
     async def intervals_before(
@@ -188,29 +155,52 @@ class History:
                 predecessor,
             )
 
-        chain = list(
-            reversed(
-                chain,
-            )
-        )
+        chain.reverse()
 
         return chain
 
-    async def rolling_summaries(
+    async def rolling_summaries_cells(
         self,
-        latest_rw: DecodedProduct,
-        grid_cell: tuple[int, int],
-    ) -> dict[str, float | None]:
-        """Return all rolling precipitation summaries."""
+        latest_rw: dict[
+            tuple[int, int],
+            DecodedProduct,
+        ],
+    ) -> dict[
+        tuple[int, int],
+        dict[str, float | None],
+    ]:
+        """Return rolling precipitation summaries for multiple grid cells."""
 
-        anchor = latest_rw.values[0].valid_from
+        if not latest_rw:
+            return {}
+
+        first_latest = next(
+            iter(
+                latest_rw.values(),
+            )
+        )
+
+        if not first_latest.values:
+            return {}
+
+        anchor = first_latest.values[0].valid_from
+
+        for decoded in latest_rw.values():
+
+            if not decoded.values:
+                return {}
+
+            if (
+                decoded.values[0].valid_from
+                != anchor
+            ):
+                raise ValueError(
+                    "RW grid cells do not share the same validity interval."
+                )
 
         max_hours = max(
-            int(
-                end_offset.total_seconds()
-                // 3600
-            )
-            for _, end_offset in self._ROLLING_WINDOWS
+            hours
+            for _, hours in self._ROLLING_WINDOWS
         )
 
         intervals = await self.intervals_before(
@@ -218,92 +208,94 @@ class History:
             max_hours - 1,
         )
 
-        hourly_values: list[
-            float | None
-        ] = [
-            latest_rw.values[0].value,
-        ]
+        grid_cells = tuple(
+            latest_rw.keys()
+        )
+
+        hourly_values: dict[
+            tuple[int, int],
+            list[float | None],
+        ] = {
+            grid_cell: [
+                decoded.values[0].value,
+            ]
+            for grid_cell, decoded in latest_rw.items()
+        }
 
         for interval in reversed(
             intervals,
         ):
 
-            decoded = await self._series.read_interval(
-                interval,
-                grid_cell,
+            decoded_by_cell = (
+                await self._series.read_interval_cells(
+                    interval,
+                    grid_cells,
+                )
             )
 
-            value = decoded.values[0]
+            for grid_cell in grid_cells:
 
-            hourly_values.append(
-                value.value,
-            )
+                decoded = decoded_by_cell[
+                    grid_cell
+                ]
 
-        result: list[
-            float | None
-        ] = []
-
-        for _, end_offset in self._ROLLING_WINDOWS:
-
-            hours = int(
-                end_offset.total_seconds()
-                // 3600
-            )
-
-            if len(
-                hourly_values,
-            ) < hours:
-
-                result.append(
-                    None,
+                hourly_values[
+                    grid_cell
+                ].append(
+                    decoded.values[0].value,
                 )
 
-                continue
+        summaries: dict[
+            tuple[int, int],
+            dict[str, float | None],
+        ] = {}
 
-            window = hourly_values[
-                :hours
+        for grid_cell in grid_cells:
+
+            values = hourly_values[
+                grid_cell
             ]
 
-            if any(
-                value is None
-                for value in window
-            ):
+            cell_summary: dict[
+                str,
+                float | None,
+            ] = {}
 
-                result.append(
-                    None,
+            for key, hours in self._ROLLING_WINDOWS:
+
+                if len(
+                    values,
+                ) < hours:
+
+                    cell_summary[
+                        key
+                    ] = None
+
+                    continue
+
+                window = values[
+                    :hours
+                ]
+
+                if any(
+                    value is None
+                    for value in window
+                ):
+
+                    cell_summary[
+                        key
+                    ] = None
+
+                    continue
+
+                cell_summary[
+                    key
+                ] = sum(
+                    window,
                 )
 
-                continue
+            summaries[
+                grid_cell
+            ] = cell_summary
 
-            total = sum(
-                window,
-            )
-
-            result.append(
-                total,
-            )
-
-        (
-            rw_2h,
-            rw_3h,
-            rw_6h,
-            rw_9h,
-            rw_12h,
-            rw_24h,
-            rw_36h,
-            rw_48h,
-        ) = tuple(
-            result,
-        )
-
-        return {
-            "rw_2h": rw_2h,
-            "rw_3h": rw_3h,
-            "rw_6h": rw_6h,
-            "rw_9h": rw_9h,
-            "rw_12h": rw_12h,
-            "rw_24h": rw_24h,
-            "rw_36h": rw_36h,
-            "rw_48h": rw_48h,
-        }
-
+        return summaries

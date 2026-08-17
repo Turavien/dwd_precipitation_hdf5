@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from enum import StrEnum
 
 from .const import (
@@ -78,7 +78,7 @@ RS = Product(
     download_directory="rs",
     latest_filename="composite_rs_LATEST.tar",
     file_extension="tar",
-    interval=timedelta(minutes=5),
+    interval=timedelta(hours=1),
     retention=timedelta(hours=6),
 )
 
@@ -92,16 +92,3 @@ RV = Product(
     interval=timedelta(minutes=5),
     retention=timedelta(hours=6),
 )
-
-PRODUCTS: tuple[Product, ...] = (
-    RW,
-    RS,
-    RV,
-)
-
-
-PRODUCTS_BY_KEY: dict[str, Product] = {
-    product.key: product
-    for product in PRODUCTS
-}
-

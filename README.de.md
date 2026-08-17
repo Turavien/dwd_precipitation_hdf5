@@ -3,6 +3,7 @@
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
 ![GitHub release](https://img.shields.io/github/v/release/Turavien/dwd_rainradar)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Turavien/dwd_rainradar)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.3%2B-18BCF2?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 [![Open your Home Assistant instance and open the repository inside HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Turavien&repository=dwd_rainradar)
@@ -62,8 +63,8 @@ Die Integration wird vollständig über die Benutzeroberfläche von Home Assista
 * Automatische Auswahl der passenden Radarrasterzelle
 * Optionale Sensorgruppen
 * Niederschlagssummen bis 48 Stunden
-* Vollständige ConfigFlow- und OptionsFlow-Unterstützung
-* Automatische Bereinigung deaktivierter Entitäten
+* Einrichtung und Optionen vollständig über die Home-Assistant-Oberfläche
+* Automatische Bereinigung nicht mehr angebotener Entitäten
 * Deutsche und englische Übersetzungen
 
 ## Funktionsweise
@@ -97,20 +98,18 @@ Sie stellt folgende Entitäten bereit:
 * Erwartete Niederschlagssumme der nächsten Stunde [mm]
 * Erwartete Niederschlagssumme der nächsten 2 Stunden [mm]
 
-### Aktueller Niederschlag
+### Niederschlagsintensität
 
 * Aktuelle Niederschlagsintensität [mm/h]
 * Erwartete Niederschlagsintensität in 5 Minuten [mm/h]
 * Erwartete Niederschlagsintensität in 10 Minuten [mm/h]
 * Erwartete Niederschlagsintensität in 15 Minuten [mm/h]
+* Max. erwartete Niederschlagsintensität der nächsten 2 Stunden [mm/h]
 
 ### Niederschlagsereignis
 
-* Zeit bis zum nächsten Niederschlag [min]
-* Erwartete max. Niederschlagsintensität nächsten 2 Std [mm/h]
+* Zeit bis zum nächsten erwarteten Niederschlag [min]
 * Niederschlag aktiv (Binärsensor)
-
-Diese Sensorgruppe kombiniert Informationen zum unmittelbar bevorstehenden Niederschlag sowie zur höchsten vorhergesagten Niederschlagsintensität innerhalb des zweistündigen RADVOR-Vorhersagezeitraums.
 
 ## Datenquellen
 
@@ -118,28 +117,28 @@ Alle Daten stammen aus öffentlich verfügbaren Open-Data-Produkten des Deutsche
 
 ### RADOLAN RW
 
-Radarbasierte Niederschlagssumme der letzten Stunde.
+Radarbasierte, angeeichte Niederschlagssumme über jeweils eine Stunde.
 
-Die Integration speichert aufeinanderfolgende RW-Produkte lokal und berechnet daraus sämtliche historischen Niederschlagssummen (1 h, 2 h, 3 h, 6 h, 9 h, 12 h, 24 h, 36 h und 48 h).
+RW wird in überlappenden Zeitfenstern veröffentlicht. Die Integration hält die benötigte RW-Historie lokal vor und wählt daraus für jede Berechnung eine lückenlose Folge nicht überlappender Stundenintervalle. Daraus entstehen die Niederschlagssummen für 1 h, 2 h, 3 h, 6 h, 9 h, 12 h, 24 h, 36 h und 48 h.
 
 ### RADVOR RS
 
-Radarbasierte Vorhersage kumulierter Niederschlagssummen für die kommenden 120 Minuten mit einer zeitlichen Auflösung von fünf Minuten.
+Radarbasierte einstündige Niederschlagsvorhersage, die alle fünf Minuten für unterschiedliche Vorhersagezeitpunkte bereitgestellt wird.
 
-Dieses Produkt liefert die erwarteten Niederschlagssummen für die nächsten 1 und 2 Stunden.
+Für die nächste Stunde verwendet die Integration das Intervall von jetzt bis +60 Minuten. Für die nächsten zwei Stunden werden die beiden nicht überlappenden Intervalle 0–60 und 60–120 Minuten addiert.
 
 ### RADVOR RV
 
-Radarbasierte Vorhersage der Niederschlagsintensität für die kommenden 120 Minuten mit einer zeitlichen Auflösung von fünf Minuten.
+Radarbasierte Niederschlagsvorhersage in Fünf-Minuten-Intervallen für die kommenden 120 Minuten.
 
-Aus diesem Produkt werden die aktuellen und zukünftigen Niederschlagsintensitäten, der Binärsensor **„Niederschlag aktiv“** sowie der Zeitpunkt des nächsten erwarteten Niederschlags abgeleitet.
+Die Integration verwendet das Intervall, das am aktuellen Zeitpunkt endet, für die aktuelle Intensität. Die Vorhersagen in 5, 10 und 15 Minuten beziehen sich jeweils auf das dort endende Fünf-Minuten-Intervall. Die Niederschlagsmenge jedes Intervalls wird in eine äquivalente Intensität in mm/h umgerechnet. Daraus entstehen außerdem der Binärsensor **„Niederschlag aktiv“**, die Zeit bis zum nächsten erwarteten Niederschlag sowie die höchste erwartete Intensität.
 
 ## Installation über HACS
 
 1. **HACS** öffnen.
 2. Dieses Repository als **Benutzerdefiniertes Repository** hinzufügen.
 3. Die Kategorie **Integration** auswählen.
-4. **DWD Regenradar** installieren.
+4. **DWD Rain Radar** installieren.
 5. Home Assistant neu starten.
 
 Nach dem Neustart:
@@ -150,6 +149,12 @@ Nach dem Neustart:
 4. Den gewünschten Standort eingeben oder auf der Karte auswählen.
 5. Die gewünschten Sensorgruppen auswählen.
 6. Die Einrichtung abschließen.
+
+## Entfernen
+
+Die Integration kann unter **Einstellungen → Geräte & Dienste → DWD Regenradar** über das Menü des jeweiligen Eintrags entfernt werden.
+
+Die lokal gespeicherten Radardaten bleiben unter `/config/dwd_rainradar` erhalten. Wenn alle Einträge der Integration entfernt wurden und die Daten nicht mehr benötigt werden, kann dieses Verzeichnis manuell gelöscht werden.
 
 ## Projektgeschichte
 
@@ -172,5 +177,3 @@ custom_components/dwd_rainradar/radar/LICENSE.txt
 ## Feedback und Beiträge
 
 Fehlerberichte, Funktionswünsche und Pull Requests können über GitHub eingereicht werden.
-
-Fehler und Funktionswünsche können über den GitHub-Issue-Tracker gemeldet werden.

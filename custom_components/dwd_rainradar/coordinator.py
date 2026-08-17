@@ -47,16 +47,49 @@ class UpdateCoordinator(
 
         self._engine = engine
 
+        self._grid_cell = tuple(
+            self.config_entry.data[
+                "grid_cell"
+            ]
+        )
+
+        self._engine.register_grid_cell(
+            self._grid_cell,
+        )
+
+        self._engine.register_update_callback(
+            self._handle_background_update,
+        )
+
+    def _handle_background_update(
+        self,
+    ) -> None:
+        """Request an update after background data changed."""
+
+        self.config_entry.async_create_task(
+            self.hass,
+            self.async_request_refresh(),
+            "DWD Rain Radar background refresh",
+        )
+
+    def unregister_engine(
+        self,
+    ) -> None:
+        """Unregister this coordinator from the shared engine."""
+
+        self._engine.unregister_update_callback(
+            self._handle_background_update,
+        )
+
+        self._engine.unregister_grid_cell(
+            self._grid_cell,
+        )
+
     async def _async_update_data(
         self,
     ) -> State:
         """Fetch and decode all configured products."""
 
         return await self._engine.async_update(
-            grid_cell=tuple(
-                self.config_entry.data[
-                    "grid_cell"
-                ]
-            ),
+            grid_cell=self._grid_cell,
         )
-

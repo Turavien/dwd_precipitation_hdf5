@@ -2,14 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import (
-    datetime,
-)
-
-from .const import (
-    PRECIPITATION_THRESHOLD,
-)
+from dataclasses import dataclass
 
 from .models import (
     DecodedProduct,
@@ -17,37 +10,13 @@ from .models import (
 )
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class State:
     """Current processed state of all DWD products."""
 
-    _products: dict[str, DecodedProduct] = field(
-        default_factory=dict,
-    )
+    _products: dict[str, DecodedProduct]
 
-    _rolling: dict[str, float | None] = field(
-        default_factory=dict,
-    )
-
-    def update(
-        self,
-        decoded_products: dict[str, DecodedProduct],
-        rolling: dict[str, float | None] | None = None,
-    ) -> None:
-        """Update the current state."""
-
-        self._products = decoded_products
-        self._rolling = {} if rolling is None else rolling
-
-    def _product(
-        self,
-        key: str,
-    ) -> DecodedProduct | None:
-        """Return one decoded product."""
-
-        return self._products.get(
-            key,
-        )
+    _rolling: dict[str, float | None]
 
     def _values(
         self,
@@ -55,7 +24,7 @@ class State:
     ) -> tuple[ParsedValue, ...]:
         """Return parsed values of one product."""
 
-        product = self._product(
+        product = self._products.get(
             key,
         )
 
@@ -79,15 +48,15 @@ class State:
 
         return values[-1]
 
-    def _offset_minutes(
+    def _end_offset_minutes(
         self,
         value: ParsedValue,
     ) -> int:
-        """Return the forecast offset in minutes."""
+        """Return the forecast interval end offset in minutes."""
 
         return int(
             (
-                value.valid_from
+                value.valid_until
                 - value.timestamp
             ).total_seconds()
             / 60
@@ -97,14 +66,15 @@ class State:
         self,
         hours: int,
     ) -> float | None:
-        """Return precipitation for consecutive non-overlapping RS hours."""
+        """Return precipitation for consecutive future RS hours."""
 
         total = 0.0
 
         for hour in range(
-            hours,
+            1,
+            hours + 1,
         ):
-            value = self._number_by_offset(
+            value = self._number_by_end_offset(
                 "rs",
                 hour * 60,
             )
@@ -116,18 +86,18 @@ class State:
 
         return total
 
-    def _number_by_offset(
+    def _number_by_end_offset(
         self,
         key: str,
         offset_minutes: int,
     ) -> float | None:
-        """Return the precipitation value for one forecast offset."""
+        """Return one forecast value by interval end offset."""
 
         for value in self._values(
             key,
         ):
             if (
-                self._offset_minutes(
+                self._end_offset_minutes(
                     value,
                 )
                 == offset_minutes
@@ -136,13 +106,13 @@ class State:
 
         return None
 
-    def _rv_intensity_by_offset(
+    def _rv_intensity_by_end_offset(
         self,
         offset_minutes: int,
     ) -> float | None:
-        """Return RV precipitation intensity in mm/h for one forecast offset."""
+        """Return RV precipitation intensity by interval end offset."""
 
-        value = self._number_by_offset(
+        value = self._number_by_end_offset(
             "rv",
             offset_minutes,
         )
@@ -152,27 +122,27 @@ class State:
 
         return value * 12
 
-    def _maximum_by_offset(
+    def _maximum_by_end_offset(
         self,
         key: str,
         minimum_offset_minutes: int = 0,
     ) -> float | None:
-        """Return the maximum forecast value after one offset."""
+        """Return the maximum forecast value from one end offset."""
 
         maximum: float | None = None
 
         for value in self._values(
             key,
         ):
-            if value.value is None:
-                continue
-
-            offset = self._offset_minutes(
+            offset = self._end_offset_minutes(
                 value,
             )
 
             if offset < minimum_offset_minutes:
                 continue
+
+            if value.value is None:
+                return None
 
             if (
                 maximum is None
@@ -182,31 +152,27 @@ class State:
 
         return maximum
 
-    def _first_positive_rv_offset(
+    def _first_positive_rv_end_offset(
         self,
         minimum_offset_minutes: int = 0,
     ) -> int | None:
-        """Return the first RV forecast offset above the intensity threshold."""
+        """Return the first RV interval end offset with precipitation."""
 
         for value in self._values(
             "rv",
         ):
-            if value.value is None:
-                continue
-
-            offset = self._offset_minutes(
+            offset = self._end_offset_minutes(
                 value,
             )
 
             if offset < minimum_offset_minutes:
                 continue
 
-            intensity = value.value * 12
+            if value.value is None:
+                return None
 
-            if intensity < PRECIPITATION_THRESHOLD:
-                continue
-
-            return offset
+            if value.value > 0.0:
+                return offset
 
         return None
 
@@ -329,19 +295,35 @@ class State:
     def intensity_now(
         self,
     ) -> float | None:
-        """Return the precipitation intensity during the current five-minute interval."""
+        """Return intensity for the five-minute interval ending now."""
 
-        return self._rv_intensity_by_offset(
+        return self._rv_intensity_by_end_offset(
             0,
         )
+
+    @property
+    def precipitation_active(
+        self,
+    ) -> bool | None:
+        """Return whether precipitation is present in the current RV interval."""
+
+        value = self._number_by_end_offset(
+            "rv",
+            0,
+        )
+
+        if value is None:
+            return None
+
+        return value > 0.0
 
     @property
     def intensity_in_5min(
         self,
     ) -> float | None:
-        """Return the precipitation intensity during the five-minute interval starting in 5 minutes."""
+        """Return intensity for the interval ending in five minutes."""
 
-        return self._rv_intensity_by_offset(
+        return self._rv_intensity_by_end_offset(
             5,
         )
 
@@ -349,9 +331,9 @@ class State:
     def intensity_in_10min(
         self,
     ) -> float | None:
-        """Return the precipitation intensity during the five-minute interval starting in 10 minutes."""
+        """Return intensity for the interval ending in ten minutes."""
 
-        return self._rv_intensity_by_offset(
+        return self._rv_intensity_by_end_offset(
             10,
         )
 
@@ -359,9 +341,9 @@ class State:
     def intensity_in_15min(
         self,
     ) -> float | None:
-        """Return the precipitation intensity during the five-minute interval starting in 15 minutes."""
+        """Return intensity for the interval ending in fifteen minutes."""
 
-        return self._rv_intensity_by_offset(
+        return self._rv_intensity_by_end_offset(
             15,
         )
 
@@ -371,7 +353,7 @@ class State:
     ) -> float | None:
         """Return the maximum forecast precipitation intensity."""
 
-        maximum = self._maximum_by_offset(
+        maximum = self._maximum_by_end_offset(
             "rv",
             5,
         )
@@ -385,30 +367,10 @@ class State:
     def precipitation_start(
         self,
     ) -> int | None:
-        """Return minutes until precipitation starts."""
+        """Return minutes until precipitation is expected."""
 
-        return self._first_positive_rv_offset(
+        return self._first_positive_rv_end_offset(
             0,
-        )
-
-    @property
-    def rs(
-        self,
-    ) -> tuple[ParsedValue, ...]:
-        """Return RADVOR-RS values."""
-
-        return self._values(
-            "rs",
-        )
-
-    @property
-    def rv(
-        self,
-    ) -> tuple[ParsedValue, ...]:
-        """Return RADVOR-RV values."""
-
-        return self._values(
-            "rv",
         )
 
     @property

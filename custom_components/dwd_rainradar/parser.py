@@ -24,6 +24,26 @@ class Parser:
     ) -> tuple[ParsedValue, ...]:
         """Read one precipitation value from a DWD HDF5 file."""
 
+        return (
+            self.read_cells(
+                data,
+                (grid_cell,),
+            )[grid_cell],
+        )
+
+    def read_cells(
+        self,
+        data: bytes,
+        grid_cells: tuple[
+            tuple[int, int],
+            ...
+        ],
+    ) -> dict[
+        tuple[int, int],
+        ParsedValue,
+    ]:
+        """Read precipitation values for multiple grid cells."""
+
         with h5py.File(
             BytesIO(data),
             "r",
@@ -31,19 +51,19 @@ class Parser:
 
             try:
                 dataset = hdf5["dataset1"]["data1"]
-
             except KeyError as err:
                 raise ValueError(
                     "Unsupported DWD HDF5 structure."
                 ) from err
 
-            return (
-                self._read_dataset(
+            return {
+                grid_cell: self._read_dataset(
                     hdf5,
                     dataset,
                     grid_cell,
-                ),
-            )
+                )
+                for grid_cell in grid_cells
+            }
 
     def _read_dataset(
         self,

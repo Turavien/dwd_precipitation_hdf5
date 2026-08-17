@@ -8,6 +8,8 @@ from dataclasses import dataclass
 
 from homeassistant.const import (
     UnitOfPrecipitationDepth,
+    UnitOfTime,
+    UnitOfVolumetricFlux,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -29,12 +31,10 @@ from homeassistant.components.sensor import (
 
 from datetime import datetime
 
-from .attributes import RainAttributes
 from .const import (
     CONF_SENSOR_GROUPS,
     DEFAULT_SENSOR_GROUPS,
     DOMAIN,
-    PRECIPITATION_THRESHOLD,
     SENSOR_GROUP_CURRENT,
     SENSOR_GROUP_EVENT,
     SENSOR_GROUP_FORECAST,
@@ -62,6 +62,24 @@ class PrecipitationDescription(
     ] | None = None
 
 
+def _rw_attributes(
+    coordinator: UpdateCoordinator,
+) -> dict[str, object]:
+    """Return attributes for the native RW product."""
+
+    rw = coordinator.data.rw
+
+    return {
+        "product": "RW",
+        "source": "RADOLAN",
+        "latest_measurement": (
+            rw[0].valid_until
+            if rw
+            else None
+        ),
+    }
+
+
 # ------------------------------------------------------------------
 # Historical precipitation
 # ------------------------------------------------------------------
@@ -77,7 +95,7 @@ HISTORY_SENSORS = (
         suggested_display_precision=1,
         value_fn=lambda coordinator:
             coordinator.data.precipitation_last_1h,
-        attributes_fn=RainAttributes.rw,
+        attributes_fn=_rw_attributes,
     ),
 
 )
@@ -190,7 +208,7 @@ FORECAST_SENSORS = (
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
+        suggested_display_precision=2,
         value_fn=lambda coordinator:
             coordinator.data.precipitation_next_1h,
     ),
@@ -201,7 +219,7 @@ FORECAST_SENSORS = (
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
+        suggested_display_precision=2,
         value_fn=lambda coordinator:
             coordinator.data.precipitation_next_2h,
     ),
@@ -209,18 +227,18 @@ FORECAST_SENSORS = (
 )
 
 # ------------------------------------------------------------------
-# Current / short-term precipitation intensity
+# Precipitation intensity
 # ------------------------------------------------------------------
 
-CURRENT_INTENSITY_SENSORS = (
+INTENSITY_SENSORS = (
 
     PrecipitationDescription(
         key="radvor_rv_now",
         translation_key="intensity_now",
-        native_unit_of_measurement="mm/h",
+        native_unit_of_measurement=UnitOfVolumetricFlux.MILLIMETERS_PER_HOUR,
         device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
+        suggested_display_precision=2,
         value_fn=lambda coordinator:
             coordinator.data.intensity_now,
     ),
@@ -228,10 +246,10 @@ CURRENT_INTENSITY_SENSORS = (
     PrecipitationDescription(
         key="radvor_rv_5min",
         translation_key="intensity_in_5min",
-        native_unit_of_measurement="mm/h",
+        native_unit_of_measurement=UnitOfVolumetricFlux.MILLIMETERS_PER_HOUR,
         device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
+        suggested_display_precision=2,
         value_fn=lambda coordinator:
             coordinator.data.intensity_in_5min,
     ),
@@ -239,10 +257,10 @@ CURRENT_INTENSITY_SENSORS = (
     PrecipitationDescription(
         key="radvor_rv_10min",
         translation_key="intensity_in_10min",
-        native_unit_of_measurement="mm/h",
+        native_unit_of_measurement=UnitOfVolumetricFlux.MILLIMETERS_PER_HOUR,
         device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
+        suggested_display_precision=2,
         value_fn=lambda coordinator:
             coordinator.data.intensity_in_10min,
     ),
@@ -250,12 +268,23 @@ CURRENT_INTENSITY_SENSORS = (
     PrecipitationDescription(
         key="radvor_rv_15min",
         translation_key="intensity_in_15min",
-        native_unit_of_measurement="mm/h",
+        native_unit_of_measurement=UnitOfVolumetricFlux.MILLIMETERS_PER_HOUR,
         device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
+        suggested_display_precision=2,
         value_fn=lambda coordinator:
             coordinator.data.intensity_in_15min,
+    ),
+
+    PrecipitationDescription(
+        key="radvor_rv_max",
+        translation_key="maximum_precipitation_intensity",
+        native_unit_of_measurement=UnitOfVolumetricFlux.MILLIMETERS_PER_HOUR,
+        device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        value_fn=lambda coordinator:
+            coordinator.data.maximum_precipitation_intensity,
     ),
 
 )
@@ -269,45 +298,20 @@ EVENT_SENSORS = (
     PrecipitationDescription(
         key="radvor_rv_start",
         translation_key="precipitation_start",
-        native_unit_of_measurement="min",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         suggested_display_precision=0,
         value_fn=lambda coordinator:
             coordinator.data.precipitation_start,
     ),
 
-    PrecipitationDescription(
-        key="radvor_rv_max",
-        translation_key="maximum_precipitation_intensity",
-        native_unit_of_measurement="mm/h",
-        device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
-        value_fn=lambda coordinator:
-            coordinator.data.maximum_precipitation_intensity,
-    ),
-
 )
 
 SENSOR_GROUP_MAP = {
-    SENSOR_GROUP_CURRENT: (
-        *CURRENT_INTENSITY_SENSORS,
-    ),
-
-    SENSOR_GROUP_FORECAST: (
-        *FORECAST_SENSORS,
-    ),
-
-    SENSOR_GROUP_EVENT: (
-        *EVENT_SENSORS,
-    ),
-
-    SENSOR_GROUP_HISTORY: (
-        *HISTORY_SENSORS,
-    ),
-
-    SENSOR_GROUP_ROLLING: (
-        *ROLLING_SENSORS,
-    ),
+    SENSOR_GROUP_CURRENT: INTENSITY_SENSORS,
+    SENSOR_GROUP_FORECAST: FORECAST_SENSORS,
+    SENSOR_GROUP_EVENT: EVENT_SENSORS,
+    SENSOR_GROUP_HISTORY: HISTORY_SENSORS,
+    SENSOR_GROUP_ROLLING: ROLLING_SENSORS,
 }
 
 async def async_setup_entry(
@@ -391,29 +395,9 @@ class DwdRainRadarSensor(
         if self.coordinator.data is None:
             return None
 
-        value = self.entity_description.value_fn(
+        return self.entity_description.value_fn(
             self.coordinator
         )
-
-        if value is None:
-            return None
-
-        if isinstance(
-            value,
-            (int, float),
-        ):
-            if (
-                value > 0
-                and value < PRECIPITATION_THRESHOLD
-            ):
-                return 0.0
-
-            return round(
-                value,
-                1,
-            )
-
-        return value
 
     @property
     def extra_state_attributes(
