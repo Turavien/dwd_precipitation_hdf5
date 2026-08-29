@@ -2,35 +2,32 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import (
-    DeviceEntryType,
-    DeviceInfo,
-)
 from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
 )
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-)
-
-from .coordinator import UpdateCoordinator
 
 from .const import (
     CONF_SENSOR_GROUPS,
     DEFAULT_SENSOR_GROUPS,
-    DOMAIN,
     SENSOR_GROUP_EVENT,
 )
+from .coordinator import UpdateCoordinator
+from .entity import DwdRainRadarEntity
+from .products import (
+    Product,
+    RV,
+)
+
+PARALLEL_UPDATES = 0
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -39,6 +36,7 @@ class RainBinarySensorDescription(
 ):
     """Binary sensor description."""
 
+    product: Product
     sensor_group: str
     value_fn: Callable[
         [UpdateCoordinator],
@@ -50,6 +48,7 @@ BINARY_SENSORS = (
 
     RainBinarySensorDescription(
         key="radvor_rv_active",
+        product=RV,
         translation_key="precipitation_active",
         sensor_group=SENSOR_GROUP_EVENT,
         value_fn=lambda coordinator:
@@ -89,41 +88,25 @@ async def async_setup_entry(
 
 
 class DwdRainRadarBinarySensor(
-    CoordinatorEntity,
+    DwdRainRadarEntity,
     BinarySensorEntity,
 ):
     """DWD Rain Radar binary sensor."""
-
-    _attr_has_entity_name = True
 
     def __init__(
         self,
         coordinator: UpdateCoordinator,
         description: RainBinarySensorDescription,
     ) -> None:
+        """Initialize the entity."""
 
-        super().__init__(coordinator)
+        super().__init__(
+            coordinator,
+            description.key,
+            description.product,
+        )
 
         self.entity_description = description
-
-        self._attr_unique_id = (
-            f"{coordinator.config_entry.entry_id}_"
-            f"{description.key}"
-        )
-
-        self._attr_device_info = DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifiers={
-                (
-                    DOMAIN,
-                    coordinator.config_entry.entry_id,
-                )
-            },
-            name=(
-                coordinator.config_entry.title
-                or "DWD Rain Radar"
-            ),
-        )
 
     @property
     def is_on(

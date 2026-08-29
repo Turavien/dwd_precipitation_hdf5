@@ -1,0 +1,234 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  repository-checks:
+    name: Repository checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14.6"
+
+      - name: Install validation dependency
+        run: |
+          python -m pip install --disable-pip-version-check PyYAML
+
+      - name: Validate repository files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          import yaml
+
+
+          integration = Path(
+              "custom_components/dwd_rainradar"
+          )
+
+          json_files = sorted(
+              integration.rglob(
+                  "*.json"
+              )
+          )
+
+          assert json_files, (
+              "No JSON files found."
+          )
+
+          for path in json_files:
+
+              with path.open(
+                  encoding="utf-8",
+              ) as file:
+
+                  json.load(
+                      file
+                  )
+
+              print(
+                  f"JSON OK: {path}"
+              )
+
+
+          quality_path = (
+              integration
+              / "quality_scale.yaml"
+          )
+
+          with quality_path.open(
+              encoding="utf-8",
+          ) as file:
+
+              quality = yaml.safe_load(
+                  file
+              )
+
+          assert isinstance(
+              quality,
+              dict,
+          )
+
+          assert isinstance(
+              quality.get(
+                  "rules"
+              ),
+              dict,
+          )
+
+          print(
+              "quality_scale.yaml OK: "
+              f"{len(quality['rules'])} rules"
+          )
+
+
+          for filename in (
+              "README.md",
+              "README.de.md",
+          ):
+
+              text = Path(
+                  filename
+              ).read_text(
+                  encoding="utf-8"
+              )
+
+              fences = text.count(
+                  "```"
+              )
+
+              assert fences % 2 == 0, (
+                  f"{filename}: "
+                  "unclosed Markdown code block"
+              )
+
+              print(
+                  f"{filename}: "
+                  f"{fences} code fences OK"
+              )
+          PY
+
+      - name: Check Python syntax
+        run: |
+          python -m compileall -q \
+              custom_components/dwd_rainradar \
+              tests
+
+
+  tests:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        include:
+
+          - name: HA 2025.3.0 / Python 3.13.2
+            python-version: "3.13.2"
+            pytest-ha-version: "0.13.221"
+            coverage: false
+
+          - name: HA 2026.8.3 / Python 3.14.6
+            python-version: "3.14.6"
+            pytest-ha-version: "0.13.357"
+            coverage: true
+
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONWARNINGS: "ignore::SyntaxWarning"
+
+    steps:
+
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install \
+              --disable-pip-version-check \
+              "pytest-homeassistant-custom-component==${{ matrix.pytest-ha-version }}" \
+              "h5py==3.16.0"
+
+      - name: Show test environment
+        run: |
+          python - <<'PY'
+          import sys
+          from importlib.metadata import version
+
+
+          print(
+              "Python:",
+              sys.version,
+          )
+
+          for package in (
+              "homeassistant",
+              "pytest-homeassistant-custom-component",
+              "pytest",
+              "pytest-cov",
+              "h5py",
+          ):
+
+              print(
+                  f"{package}: "
+                  f"{version(package)}"
+              )
+          PY
+
+      - name: Check Python syntax
+        run: |
+          python -m compileall -q \
+              custom_components/dwd_rainradar \
+              tests
+
+      - name: Run minimum-version tests
+        if: ${{ !matrix.coverage }}
+        run: |
+          python -m pytest \
+              -p no:cacheprovider \
+              --basetemp=/tmp/dwd-rainradar-pytest \
+              -q \
+              tests
+
+      - name: Run current tests with coverage
+        if: ${{ matrix.coverage }}
+        env:
+          COVERAGE_FILE: /tmp/dwd-rainradar.coverage
+        run: |
+          python -m pytest \
+              -p no:cacheprovider \
+              --basetemp=/tmp/dwd-rainradar-pytest \
+              --cov=custom_components.dwd_rainradar \
+              --cov-report=term-missing \
+              --cov-fail-under=100 \
+              tests

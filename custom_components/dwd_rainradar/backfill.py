@@ -91,7 +91,7 @@ class Backfill:
                     )
                 )
 
-                self._decoder.decode(
+                await self._decoder.async_decode(
                     result,
                     (0, 0),
                 )

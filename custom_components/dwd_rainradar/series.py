@@ -82,7 +82,7 @@ class Series:
             interval.valid_from,
         )
 
-        return self._decoder.decode_cells(
+        return await self._decoder.async_decode_cells(
             result,
             grid_cells,
         )

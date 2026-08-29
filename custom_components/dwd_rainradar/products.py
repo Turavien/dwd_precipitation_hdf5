@@ -11,6 +11,10 @@ from .const import (
     DWD_RADVOR_URL,
 )
 
+_PRODUCT_FRESHNESS_GRACE = timedelta(
+    minutes=5,
+)
+
 
 class FileType(StrEnum):
     """Supported DWD file types."""
@@ -37,6 +41,10 @@ class Product:
 
     interval: timedelta
 
+    publication_interval: timedelta
+
+    publication_delay: timedelta
+
     retention: timedelta
 
     def directory_url(
@@ -59,6 +67,18 @@ class Product:
             f"{self.latest_filename}"
         )
 
+    @property
+    def freshness_window(
+        self,
+    ) -> timedelta:
+        """Return how long one product timestamp remains current."""
+
+        return (
+            self.publication_interval
+            + self.publication_delay
+            + _PRODUCT_FRESHNESS_GRACE
+        )
+
 
 RW = Product(
     key="rw",
@@ -68,6 +88,8 @@ RW = Product(
     latest_filename="raa01-rw_10000-latest-dwd---bin.hdf5",
     file_extension="hdf5",
     interval=timedelta(hours=1),
+    publication_interval=timedelta(minutes=10),
+    publication_delay=timedelta(minutes=24),
     retention=timedelta(hours=49),
 )
 
@@ -79,6 +101,8 @@ RS = Product(
     latest_filename="composite_rs_LATEST.tar",
     file_extension="tar",
     interval=timedelta(hours=1),
+    publication_interval=timedelta(minutes=5),
+    publication_delay=timedelta(minutes=3),
     retention=timedelta(hours=6),
 )
 
@@ -90,5 +114,7 @@ RV = Product(
     latest_filename="composite_rv_LATEST.tar",
     file_extension="tar",
     interval=timedelta(minutes=5),
+    publication_interval=timedelta(minutes=5),
+    publication_delay=timedelta(minutes=3),
     retention=timedelta(hours=6),
 )

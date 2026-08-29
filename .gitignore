@@ -6,3 +6,6 @@ __pycache__/
 *.swp
 .DS_Store
 *.tar.gz
+.pytest_cache/
+.coverage
+htmlcov/

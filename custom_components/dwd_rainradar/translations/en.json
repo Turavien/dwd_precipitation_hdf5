@@ -8,6 +8,10 @@
         "data": {
           "name": "Name",
           "coordinates": "Coordinates"
+        },
+        "data_description": {
+          "name": "Name used to display this location in Home Assistant.",
+          "coordinates": "Location for which the DWD radar data is evaluated."
         }
       },
       "sensor_groups": {
@@ -15,34 +19,21 @@
         "description": "Select which sensor groups should be created.\n\nNote: Rolling precipitation totals are calculated from RADOLAN RW.",
         "data": {
           "sensor_groups": "Sensor groups"
+        },
+        "data_description": {
+          "sensor_groups": "Defines which groups of precipitation sensors are created for this location."
         }
-      }
-    },
-    "error": {
-      "invalid_name": "Invalid name",
-      "invalid_coordinates": "Invalid coordinates",
-      "outside_dwd_coverage": "Location is outside DWD radar coverage"
-    },
-    "abort": {
-      "already_configured": "This location is already configured."
-    }
-  },
-
-  "options": {
-    "step": {
-      "init": {
-        "title": "Edit location",
+      },
+      "reconfigure": {
+        "title": "Reconfigure DWD Rain Radar",
         "description": "Change the integration name and location.",
         "data": {
           "name": "Name",
           "coordinates": "Coordinates"
-        }
-      },
-      "sensor_groups": {
-        "title": "Select sensor groups",
-        "description": "Select which sensor groups should be created.\n\nNote: Rolling precipitation totals are calculated from RADOLAN RW.",
-        "data": {
-          "sensor_groups": "Sensor groups"
+        },
+        "data_description": {
+          "name": "Name used to display this location in Home Assistant.",
+          "coordinates": "Location for which the DWD radar data is evaluated."
         }
       }
     },
@@ -50,10 +41,28 @@
       "invalid_name": "Invalid name",
       "invalid_coordinates": "Invalid coordinates",
       "outside_dwd_coverage": "Location is outside DWD radar coverage",
-      "already_configured": "This location is already configured."
+      "cannot_connect": "Failed to connect to the DWD radar service.",
+      "unknown": "Unexpected error while checking the DWD radar service."
+    },
+    "abort": {
+      "already_configured": "This location is already configured.",
+      "reconfigure_successful": "Configuration updated successfully."
     }
   },
-
+  "options": {
+    "step": {
+      "init": {
+        "title": "Select sensor groups",
+        "description": "Select which sensor groups should be created.\n\nNote: Rolling precipitation totals are calculated from RADOLAN RW.",
+        "data": {
+          "sensor_groups": "Sensor groups"
+        },
+        "data_description": {
+          "sensor_groups": "Defines which groups of precipitation sensors are created for this location."
+        }
+      }
+    }
+  },
   "selector": {
     "sensor_groups": {
       "options": {

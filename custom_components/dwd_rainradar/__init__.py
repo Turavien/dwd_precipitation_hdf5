@@ -99,6 +99,10 @@ async def async_migrate_entry(
         entry.data
     )
 
+    options = dict(
+        entry.options
+    )
+
     if entry.minor_version < 2:
 
         data.setdefault(
@@ -106,11 +110,27 @@ async def async_migrate_entry(
             DEFAULT_SENSOR_GROUPS,
         )
 
+    if entry.minor_version < 5:
+
+        sensor_groups = data.pop(
+            CONF_SENSOR_GROUPS,
+            options.get(
+                CONF_SENSOR_GROUPS,
+                DEFAULT_SENSOR_GROUPS,
+            ),
+        )
+
+        options.setdefault(
+            CONF_SENSOR_GROUPS,
+            sensor_groups,
+        )
+
     hass.config_entries.async_update_entry(
         entry,
         data=data,
+        options=options,
         unique_id=None,
-        minor_version=4,
+        minor_version=5,
     )
 
     return True

@@ -91,7 +91,7 @@ class History:
         """Return a continuous chain of consecutive intervals."""
 
         tolerance = timedelta(
-            minutes=5,
+            minutes=1,
         )
 
         intervals = await self._series.intervals()
@@ -107,11 +107,27 @@ class History:
             -1,
         ):
 
+            candidate = intervals[
+                index
+            ]
+
+            delta = (
+                timestamp
+                - candidate.valid_until
+            )
+
             if (
-                intervals[index].valid_until
-                <= timestamp
+                timedelta(0)
+                <= delta
+                <= tolerance
             ):
                 current_index = index
+                break
+
+            if (
+                candidate.valid_until
+                < timestamp - tolerance
+            ):
                 break
 
         if current_index is None:
@@ -135,17 +151,29 @@ class History:
                 -1,
             ):
 
-                candidate = intervals[index]
+                candidate = intervals[
+                    index
+                ]
 
-                delta = abs(
-                    candidate.valid_until
-                    - expected_end
+                delta = (
+                    expected_end
+                    - candidate.valid_until
                 )
 
-                if delta <= tolerance:
+                if (
+                    timedelta(0)
+                    <= delta
+                    <= tolerance
+                ):
 
                     predecessor = candidate
                     current_index = index
+                    break
+
+                if (
+                    candidate.valid_until
+                    < expected_end - tolerance
+                ):
                     break
 
             if predecessor is None:

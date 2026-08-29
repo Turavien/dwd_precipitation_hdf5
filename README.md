@@ -31,7 +31,33 @@ Typical applications include:
 * weather-dependent home automations
 * control of shutters, awnings and outdoor devices
 
-The integration is fully configurable through the Home Assistant user interface. Sensor groups can be selected during setup and changed later at any time through the integration options.
+The integration is fully configurable through the Home Assistant user interface.
+
+## Configuration
+
+### Initial setup
+
+The following information is requested during initial setup:
+
+* **Name** – display name of the location in Home Assistant.
+* **Location** – latitude and longitude of the location to evaluate. The location can be selected with the Home Assistant location selector. The integration automatically determines the corresponding DWD radar grid cell.
+* **Sensor groups** – determines which entities are created for this location.
+
+The following sensor groups are available:
+
+* **Intensities** – current intensity, +5, +10 and +15 minutes and the maximum expected intensity during the next two hours.
+* **Forecast totals** – expected precipitation totals during the next one and two hours.
+* **Precipitation event** – precipitation active and time until the next expected precipitation.
+* **Last 1 hour total** – latest RADOLAN RW hourly precipitation total.
+* **Rolling totals** – precipitation totals during the previous 2 to 48 hours.
+
+### Options
+
+The enabled sensor groups can be changed at any time through the integration options. Entities belonging to groups that are no longer selected are automatically removed from the entity registry.
+
+### Reconfigure
+
+The **Reconfigure** flow can be used to change the name and location of an existing entry without removing and setting up the integration again.
 
 > **Important**
 >
@@ -125,13 +151,131 @@ RW is published for overlapping time windows. The integration keeps the required
 
 Radar-based one-hour precipitation forecast provided every five minutes for different forecast times.
 
-For the next hour, the integration uses the interval from now to +60 minutes. For the next two hours, it adds the two non-overlapping intervals 0–60 and 60–120 minutes.
+For the next one and two hour sensors, the integration uses the first one or two non-overlapping 60-minute forecast intervals of the latest DWD run. These intervals are anchored to the DWD analysis time. Because the product becomes available with a delay, they therefore do not exactly represent a 60- or 120-minute period shifted from the current wall-clock time. The integration deliberately does not interpolate precipitation within an hourly interval.
 
 ### RADVOR RV
 
 Radar-based precipitation forecast in five-minute intervals covering the next 120 minutes.
 
-The integration uses the interval ending at the current time for the current intensity. Forecasts in 5, 10 and 15 minutes refer to the five-minute interval ending at that time. The precipitation amount of each interval is converted to an equivalent intensity in mm/h. These values also provide the binary sensor **Precipitation active**, the time until precipitation is next expected and the maximum expected intensity.
+For the current intensity, the integration uses the RV five-minute interval containing the actual current time. Forecasts in 5, 10 and 15 minutes use the intervals containing the real current time plus 5, 10 and 15 minutes respectively. This means these sensors continue to advance with real time even between two DWD publications. The precipitation amount of each interval is converted to an equivalent intensity in mm/h. These values also provide the binary sensor **Precipitation active**, the real time until precipitation is next expected and the maximum expected intensity within the remaining available RV forecast horizon.
+
+## Data freshness and availability
+
+The integration evaluates RW, RS and RV freshness independently. A product remains current until its next expected publication time, including the known publication delay and an additional five-minute grace period. With the DWD timing parameters currently used by the integration, this corresponds to about 39 minutes for RW and 13 minutes for RS and RV, measured from the timestamp of the latest received product.
+
+If only one product remains unchanged beyond that point, only the entities depending on that product are marked **unavailable**. Other sensor groups remain usable as long as their own DWD product is current. The affected entities automatically become available again as soon as a newer product arrives. A complete connection failure to DWD continues to be handled centrally by the Home Assistant update coordinator.
+
+## Diagnostics
+
+Home Assistant can generate diagnostic data for each integration entry. Diagnostics can be downloaded from the integration entry menu under **Settings → Devices & Services → DWD Rain Radar** and can be attached to issue reports.
+
+The diagnostics include, among other information:
+
+* Home Assistant update coordinator status
+* timestamps and freshness status of RW, RS and RV
+* publication and freshness timing of the DWD products
+* public HTTP metadata such as ETag and Last-Modified
+* number of registered grid cells and config-entry references
+* internal state and rolling-cache status
+* status of running RW backfill tasks
+
+For privacy reasons, **no location information** is included. In particular, the diagnostics do not contain the configured name, latitude, longitude or the actual DWD grid cell of the configured location.
+
+## Data updates
+
+The Home Assistant update coordinator runs every **30 seconds**. This does not mean that product files are downloaded from DWD every 30 seconds.
+
+The integration is aware of the publication schedule of each DWD product and performs a remote request only when a newer product can reasonably be expected.
+
+The following timing parameters are currently used:
+
+* **RADVOR RV** – a new product timestamp every 5 minutes with an expected publication delay of about 3 minutes.
+* **RADVOR RS** – a new product timestamp every 5 minutes with an expected publication delay of about 3 minutes.
+* **RADOLAN RW** – a new product timestamp every 10 minutes with an expected publication delay of about 24 minutes.
+
+HTTP requests use **ETag** and **Last-Modified** where available. If the DWD product has not changed, the server can respond with `304 Not Modified`, avoiding another transfer of the complete product file.
+
+If an expected product is not yet available, the integration checks again every 30 seconds during the first five minutes. After that, the retry interval is increased to two minutes.
+
+The 30-second coordinator interval is also required so that the real-time RV entities can move to the appropriate five-minute forecast interval as wall-clock time advances, even between two DWD publications.
+
+### RW history and backfill
+
+RADOLAN RW files are stored locally under `/config/dwd_rainradar`. The integration maintains the history required to calculate rolling precipitation totals.
+
+After initial setup or when historical intervals are missing, available RW products are downloaded in the background. Backfill processing is independent of current sensor updates and does not block the Home Assistant event loop.
+
+## Known limitations
+
+* The integration is limited to the radar coverage of the DWD products used. Locations outside DWD radar coverage cannot be configured.
+* Current data requires access to the public DWD Open Data service.
+* RADVOR is a short-range radar-based nowcasting product and does not replace a general weather forecast.
+* RV forecasts extend only approximately two hours into the future.
+* RS hourly totals are anchored to the DWD analysis time. The next one and two hour sensors therefore do not exactly represent 60- or 120-minute periods starting at the current wall-clock time.
+* The integration deliberately does not interpolate RS precipitation within an hourly interval.
+* Immediately after initial setup, longer rolling RW totals may temporarily have no value until the required history has been backfilled.
+* The current version provides precipitation amount and intensity but not precipitation type such as rain, snow, graupel or hail.
+
+## Automation example
+
+The following example creates a Home Assistant persistent notification when the **Precipitation active** binary sensor changes to `on`.
+
+Replace the entity ID with the entity ID belonging to your configured location.
+
+```yaml
+alias: DWD Rain Radar – Precipitation starts
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.YOUR_LOCATION_precipitation_active
+    to: "on"
+actions:
+  - action: persistent_notification.create
+    data:
+      title: Precipitation detected
+      message: DWD Rain Radar currently reports precipitation.
+mode: single
+```
+
+The precipitation entities can also be used as conditions for irrigation, window, awning or other weather-dependent automations.
+
+## Troubleshooting
+
+### The integration cannot be set up
+
+**Symptom:** The setup flow reports that it cannot connect to the DWD service.
+
+**Resolution:**
+
+1. Verify that Home Assistant has general internet access.
+2. Verify that `https://opendata.dwd.de` can be reached from the Home Assistant system.
+3. Check DNS, firewall, proxy or Pi-hole rules if the DWD service is being blocked.
+4. If DWD is temporarily unavailable, retry setup later.
+
+### Only some sensor groups are unavailable
+
+If, for example, only RV entities are unavailable while RW and RS continue to work, the corresponding DWD product may have become stale.
+
+Download diagnostics under **Settings → Devices & Services → DWD Rain Radar** and check which product is reported as `fresh: false`.
+
+The affected entities automatically become available again as soon as DWD publishes a newer product.
+
+### Rolling precipitation totals show `unknown`
+
+The required RW history may still be incomplete, especially directly after initial setup.
+
+The integration automatically downloads missing historical RW products in the background. Longer windows such as 24, 36 or 48 hours can therefore become available later than shorter windows.
+
+If a value remains unknown, inspect the diagnostics for the backfill and product status.
+
+### Expected entities are missing
+
+Check the enabled sensor groups in the options of the DWD Rain Radar integration entry.
+
+Entities belonging to a disabled sensor group are intentionally not created.
+
+### The location or name needs to be changed
+
+Open the integration entry and select **Reconfigure**. The integration does not need to be removed.
 
 ## Installation via HACS
 

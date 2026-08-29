@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 _LOGGER = logging.getLogger(__name__)
 
 from pathlib import Path
+from threading import RLock
 
 from homeassistant.core import HomeAssistant
 
@@ -65,6 +66,8 @@ class Storage:
                 ],
             ],
         ] = {}
+
+        self._cache_lock = RLock()
 
     def get_product_directory(
         self,
@@ -288,32 +291,34 @@ class Storage:
     ) -> list[Path]:
         """Return all stored files for one product."""
 
-        cached = self._file_cache.get(
-            product_key,
-        )
+        with self._cache_lock:
 
-        if cached is not None:
-            return cached
+            cached = self._file_cache.get(
+                product_key,
+            )
 
-        directory = self._ensure_product_directory(
-            product_key,
-        )
+            if cached is not None:
+                return cached
 
-        files = sorted(
-            (
-                path
-                for path in directory.iterdir()
-                if (
-                    path.is_file()
-                    and path.name != _METADATA_FILENAME
-                )
-            ),
-            key=lambda path: path.name,
-        )
+            directory = self._ensure_product_directory(
+                product_key,
+            )
 
-        self._file_cache[
-            product_key
-        ] = files
+            files = sorted(
+                (
+                    path
+                    for path in directory.iterdir()
+                    if (
+                        path.is_file()
+                        and path.name != _METADATA_FILENAME
+                    )
+                ),
+                key=lambda path: path.name,
+            )
+
+            self._file_cache[
+                product_key
+            ] = files
 
         _LOGGER.debug(
             "Storage[%s]: directory=%s files=%d first=%s last=%s",
@@ -332,15 +337,17 @@ class Storage:
     ) -> None:
         """Invalidate cached file list and interval index."""
 
-        self._file_cache.pop(
-            product_key,
-            None,
-        )
+        with self._cache_lock:
 
-        self._interval_cache.pop(
-            product_key,
-            None,
-        )
+            self._file_cache.pop(
+                product_key,
+                None,
+            )
+
+            self._interval_cache.pop(
+                product_key,
+                None,
+            )
 
     def _get_interval_index(
         self,
@@ -354,41 +361,43 @@ class Storage:
     ]:
         """Return stored files indexed by validity start."""
 
-        cached = self._interval_cache.get(
-            product.key,
-        )
+        with self._cache_lock:
 
-        if cached is not None:
-            return cached
-
-        index: dict[
-            datetime,
-            tuple[
-                Path,
-                datetime,
-            ],
-        ] = {}
-
-        for (
-            file_path,
-            valid_from,
-            valid_until,
-        ) in self._iter_product_files(
-            product,
-            skip_invalid=True,
-        ):
-            index[
-                valid_from
-            ] = (
-                file_path,
-                valid_until,
+            cached = self._interval_cache.get(
+                product.key,
             )
 
-        self._interval_cache[
-            product.key
-        ] = index
+            if cached is not None:
+                return cached
 
-        return index
+            index: dict[
+                datetime,
+                tuple[
+                    Path,
+                    datetime,
+                ],
+            ] = {}
+
+            for (
+                file_path,
+                valid_from,
+                valid_until,
+            ) in self._iter_product_files(
+                product,
+                skip_invalid=True,
+            ):
+                index[
+                    valid_from
+                ] = (
+                    file_path,
+                    valid_until,
+                )
+
+            self._interval_cache[
+                product.key
+            ] = index
+
+            return index
 
     def _list_intervals(
         self,
@@ -466,18 +475,31 @@ class Storage:
         )
 
         try:
-            temporary_path.write_bytes(
-                result.data,
-            )
+
+            with temporary_path.open(
+                "wb",
+            ) as file:
+
+                file.write(
+                    result.data,
+                )
+
+                file.flush()
+
+                os.fsync(
+                    file.fileno(),
+                )
 
             temporary_path.replace(
                 file_path,
             )
 
         except Exception:
+
             temporary_path.unlink(
                 missing_ok=True,
             )
+
             raise
 
         _LOGGER.debug(
@@ -653,13 +675,41 @@ class Storage:
 
             return ProductMetadata()
 
+        etag = data.get(
+            "etag",
+        )
+
+        last_modified = data.get(
+            "last_modified",
+        )
+
+        if not (
+            (
+                etag is None
+                or isinstance(
+                    etag,
+                    str,
+                )
+            )
+            and (
+                last_modified is None
+                or isinstance(
+                    last_modified,
+                    str,
+                )
+            )
+        ):
+
+            _LOGGER.warning(
+                "Storage[%s]: invalid metadata.json values, ignoring file",
+                product_key,
+            )
+
+            return ProductMetadata()
+
         return ProductMetadata(
-            etag=data.get(
-                "etag",
-            ),
-            last_modified=data.get(
-                "last_modified",
-            ),
+            etag=etag,
+            last_modified=last_modified,
         )
 
     def _write_metadata(
@@ -691,24 +741,34 @@ class Storage:
             sort_keys=True,
         )
 
-        with temporary_path.open(
-            "w",
-            encoding="utf-8",
-        ) as file:
+        try:
 
-            file.write(
-                content,
+            with temporary_path.open(
+                "w",
+                encoding="utf-8",
+            ) as file:
+
+                file.write(
+                    content,
+                )
+
+                file.flush()
+
+                os.fsync(
+                    file.fileno(),
+                )
+
+            temporary_path.replace(
+                metadata_path,
             )
 
-            file.flush()
+        except Exception:
 
-            os.fsync(
-                file.fileno(),
+            temporary_path.unlink(
+                missing_ok=True,
             )
 
-        temporary_path.replace(
-            metadata_path,
-        )
+            raise
 
     def _build_cached_result(
         self,
@@ -723,7 +783,7 @@ class Storage:
         return FetchResult(
             product=product,
             downloaded=False,
-            timestamp=valid_until,
+            timestamp=None,
             valid_from=valid_from,
             valid_until=valid_until,
             data=data,
@@ -739,36 +799,40 @@ class Storage:
 
         deleted = 0
 
-        for (
-            file_path,
-            valid_from,
-            valid_until,
-        ) in self._iter_product_files(
-            product,
-            skip_invalid=True,
-        ):
+        try:
 
-            if valid_until < cutoff:
+            for (
+                file_path,
+                valid_from,
+                valid_until,
+            ) in self._iter_product_files(
+                product,
+                skip_invalid=True,
+            ):
 
-                _LOGGER.debug(
-                    "Storage[%s]: deleting %s (%s -> %s), cutoff=%s",
+                if valid_until < cutoff:
+
+                    _LOGGER.debug(
+                        "Storage[%s]: deleting %s (%s -> %s), cutoff=%s",
+                        product.key,
+                        file_path.name,
+                        valid_from,
+                        valid_until,
+                        cutoff,
+                    )
+
+                    file_path.unlink(
+                        missing_ok=True,
+                    )
+
+                    deleted += 1
+
+        finally:
+
+            if deleted:
+                self._invalidate_file_cache(
                     product.key,
-                    file_path.name,
-                    valid_from,
-                    valid_until,
-                    cutoff,
                 )
-
-                file_path.unlink(
-                    missing_ok=True,
-                )
-
-                deleted += 1
-
-        if deleted:
-            self._invalidate_file_cache(
-                product.key,
-            )
 
         _LOGGER.debug(
             "Storage[%s]: prune finished, deleted=%d",

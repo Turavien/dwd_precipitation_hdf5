@@ -14,6 +14,28 @@ import h5py
 from .models import ParsedValue
 
 
+def _text_attribute(
+    value: object,
+) -> str:
+    """Return one HDF5 text attribute as a string."""
+
+    if isinstance(
+        value,
+        bytes,
+    ):
+        return value.decode()
+
+    if isinstance(
+        value,
+        str,
+    ):
+        return value
+
+    raise ValueError(
+        "Unsupported DWD HDF5 text attribute."
+    )
+
+
 class Parser:
     """Read values from DWD HDF5 files."""
 
@@ -99,17 +121,29 @@ class Parser:
             dataset_what["undetect"]
         )
 
-        date = product_what["date"].decode()
+        date = _text_attribute(
+            product_what["date"]
+        )
 
-        time = product_what["time"].decode()
+        time = _text_attribute(
+            product_what["time"]
+        )
 
-        start_date = interval_what["startdate"].decode()
+        start_date = _text_attribute(
+            interval_what["startdate"]
+        )
 
-        start_time = interval_what["starttime"].decode()
+        start_time = _text_attribute(
+            interval_what["starttime"]
+        )
 
-        end_date = interval_what["enddate"].decode()
+        end_date = _text_attribute(
+            interval_what["enddate"]
+        )
 
-        end_time = interval_what["endtime"].decode()
+        end_time = _text_attribute(
+            interval_what["endtime"]
+        )
 
         timestamp = datetime.strptime(
             f"{date}{time}",
@@ -150,4 +184,3 @@ class Parser:
             valid_until=valid_until,
             value=value,
         )
-

@@ -1,0 +1,185 @@
+rules:
+
+  # Bronze
+
+  action-setup:
+    status: exempt
+    comment: |
+      This integration does not provide custom service actions.
+
+  appropriate-polling: done
+
+  brands: done
+
+  common-modules: done
+
+  config-flow-test-coverage: done
+
+  config-flow: done
+
+  dependency-transparency: done
+
+  docs-actions:
+    status: exempt
+    comment: |
+      This integration does not provide custom service actions.
+
+  docs-conditions:
+    status: exempt
+    comment: |
+      This integration does not provide custom conditions.
+
+  docs-high-level-description: done
+
+  docs-installation-instructions: done
+
+  docs-removal-instructions: done
+
+  docs-triggers:
+    status: exempt
+    comment: |
+      This integration does not provide custom triggers.
+
+  entity-event-setup:
+    status: exempt
+    comment: |
+      The integration does not explicitly subscribe entities to Home Assistant events.
+
+  entity-unique-id: done
+
+  has-entity-name: done
+
+  runtime-data: done
+
+  test-before-configure: done
+
+  test-before-setup: done
+
+  unique-config-entry: done
+
+  # Silver
+
+  action-exceptions:
+    status: exempt
+    comment: |
+      The integration does not provide actions that can raise user-facing action exceptions.
+
+  config-entry-unloading: done
+
+  docs-configuration-parameters: done
+
+  docs-installation-parameters: done
+
+  entity-unavailable: done
+
+  integration-owner: done
+
+  log-when-unavailable: done
+
+  parallel-updates: done
+
+  reauthentication-flow:
+    status: exempt
+    comment: |
+      The DWD Open Data service does not require authentication.
+
+  test-coverage: done
+
+  # Gold
+
+  devices: done
+
+  diagnostics: done
+
+  discovery:
+    status: exempt
+    comment: |
+      The integration represents a user-selected geographic DWD radar location.
+      There is no device or service instance that can be discovered automatically.
+
+  discovery-update-info:
+    status: exempt
+    comment: |
+      Automatic discovery is not applicable to user-selected geographic locations.
+
+  docs-data-update: done
+
+  docs-examples: done
+
+  docs-known-limitations: done
+
+  docs-supported-devices:
+    status: exempt
+    comment: |
+      The integration consumes a public weather service and does not integrate physical devices.
+
+  docs-supported-functions: done
+
+  docs-troubleshooting: done
+
+  docs-use-cases: done
+
+  dynamic-devices:
+    status: exempt
+    comment: |
+      Each config entry represents one fixed geographic service location.
+      No external device inventory can change dynamically.
+
+  entity-category: done
+
+  entity-device-class: done
+
+  entity-disabled-by-default:
+    status: done
+    comment: |
+      All entities represent primary precipitation data.
+      Users can disable entire sensor groups through the integration options.
+
+  entity-translations: done
+
+  exception-translations:
+    status: done
+    comment: |
+      Config-flow errors are translated.
+      The integration currently exposes no custom user-facing HomeAssistantError exceptions.
+
+  icon-translations:
+    status: done
+    comment: |
+      Sensor entities use Home Assistant device-class icons where appropriate.
+      The precipitation-active binary sensor uses an icon translation because
+      no binary-sensor device class accurately represents active precipitation.
+
+  reconfiguration-flow: done
+
+  repair-issues:
+    status: done
+    comment: |
+      There currently are no persistent user-remediable runtime conditions
+      that would benefit from a Home Assistant repair issue.
+
+  stale-devices:
+    status: done
+    comment: |
+      Each config entry owns one fixed service device.
+      There is no external device inventory that can become stale.
+
+  # Platinum
+
+  async-dependency:
+    status: todo
+    comment: |
+      h5py is synchronous and is therefore executed through the Home Assistant executor.
+      Network access itself is fully asynchronous.
+
+  inject-websession:
+    status: exempt
+    comment: |
+      Network access is implemented directly in the integration and uses
+      Home Assistant's shared aiohttp client session.
+
+  strict-typing:
+    status: todo
+    comment: |
+      Type annotations are extensively used, but strict static type checking
+      has not yet been completed for the whole integration.

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from homeassistant.core import HomeAssistant
+
 from .extractor import Extractor
 from .models import (
     DecodedProduct,
@@ -15,11 +17,48 @@ from .products import FileType
 class Decoder:
     """Decode downloaded DWD product files."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
         """Initialize decoder."""
+
+        self._hass = hass
 
         self._extractor = Extractor()
         self._parser = Parser()
+
+    async def async_decode(
+        self,
+        result: FetchResult,
+        grid_cell: tuple[int, int],
+    ) -> DecodedProduct:
+        """Decode one product outside the Home Assistant event loop."""
+
+        return await self._hass.async_add_executor_job(
+            self.decode,
+            result,
+            grid_cell,
+        )
+
+    async def async_decode_cells(
+        self,
+        result: FetchResult,
+        grid_cells: tuple[
+            tuple[int, int],
+            ...
+        ],
+    ) -> dict[
+        tuple[int, int],
+        DecodedProduct,
+    ]:
+        """Decode multiple grid cells outside the Home Assistant event loop."""
+
+        return await self._hass.async_add_executor_job(
+            self.decode_cells,
+            result,
+            grid_cells,
+        )
 
     def decode(
         self,
@@ -147,11 +186,15 @@ class Decoder:
                 f"{result.product.key} contains no values."
             )
 
+        values.sort(
+            key=lambda value: value.valid_from,
+        )
+
         if result.timestamp is None:
             result.timestamp = values[0].timestamp
 
         result.valid_from = values[0].valid_from
-        result.valid_until = values[0].valid_until
+        result.valid_until = values[-1].valid_until
 
         return self._build_decoded_product(
             result,

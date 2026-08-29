@@ -6,7 +6,10 @@ import asyncio
 
 from collections.abc import Callable
 
-from datetime import datetime
+from datetime import (
+    UTC,
+    datetime,
+)
 
 from homeassistant.core import HomeAssistant
 from .backfill import Backfill
@@ -15,8 +18,11 @@ from .fetcher import Fetcher
 from .history import History
 from .models import (
     DecodedProduct,
+    FetchResult,
+    ProductMetadata,
 )
 from .products import (
+    Product,
     RS,
     RV,
     RW,
@@ -40,7 +46,9 @@ class Engine:
             hass,
         )
 
-        self._decoder = Decoder()
+        self._decoder = Decoder(
+            hass,
+        )
 
         self._history = History(
             self._storage,
@@ -62,7 +70,27 @@ class Engine:
             RV,
         )
 
+        self._products = (
+            *self._forecast_products,
+            RW,
+        )
+
         self._update_lock = asyncio.Lock()
+
+        self._metadata_cache: dict[
+            str,
+            ProductMetadata,
+        ] = {}
+
+        self._latest_product_timestamps: dict[
+            str,
+            datetime,
+        ] = {}
+
+        self._state_cache: dict[
+            tuple[int, int],
+            State,
+        ] = {}
 
         self._grid_cell_references: dict[
             tuple[int, int],
@@ -134,6 +162,11 @@ class Engine:
                 grid_cell
             ] = references - 1
 
+        self._state_cache.pop(
+            grid_cell,
+            None,
+        )
+
         self._rolling_cache_anchor = None
         self._rolling_cache_grid_cells = ()
         self._rolling_cache = {}
@@ -164,6 +197,59 @@ class Engine:
             callback,
         )
 
+    async def _async_get_metadata(
+        self,
+        product: Product,
+    ) -> ProductMetadata:
+        """Return cached HTTP metadata for one product."""
+
+        cached = self._metadata_cache.get(
+            product.key,
+        )
+
+        if cached is not None:
+            return cached
+
+        metadata = await self._storage.async_read_metadata(
+            product.key,
+        )
+
+        self._metadata_cache[
+            product.key
+        ] = metadata
+
+        return metadata
+
+    async def _async_fetch_latest_products(
+        self,
+    ) -> dict[str, FetchResult]:
+        """Check whether newer DWD products are available."""
+
+        results: dict[
+            str,
+            FetchResult,
+        ] = {}
+
+        for product in self._products:
+
+            metadata = await self._async_get_metadata(
+                product,
+            )
+
+            result = await self._fetcher.async_download(
+                product,
+                metadata,
+                self._latest_product_timestamps.get(
+                    product.key,
+                ),
+            )
+
+            results[
+                product.key
+            ] = result
+
+        return results
+
     async def async_update(
         self,
         grid_cell: tuple[int, int],
@@ -172,28 +258,60 @@ class Engine:
 
         async with self._update_lock:
 
-            return await self._async_update(
-                grid_cell,
+            remote_results = (
+                await self._async_fetch_latest_products()
             )
 
-    async def _async_update(
+            if any(
+                result.downloaded
+                for result in remote_results.values()
+            ):
+                self._state_cache.clear()
+
+            else:
+                cached_state = self._state_cache.get(
+                    grid_cell,
+                )
+
+                if cached_state is not None:
+
+                    state = cached_state.with_reference_time(
+                        datetime.now(
+                            UTC,
+                        )
+                    )
+
+                    self._state_cache[
+                        grid_cell
+                    ] = state
+
+                    return state
+
+            state = await self._async_build_state(
+                grid_cell,
+                remote_results,
+            )
+
+            self._state_cache[
+                grid_cell
+            ] = state
+
+            return state
+
+    async def _async_build_state(
         self,
         grid_cell: tuple[int, int],
+        remote_results: dict[str, FetchResult],
     ) -> State:
-        """Execute one complete update."""
+        """Build one state from downloaded or stored products."""
 
         decoded_products: dict[str, DecodedProduct] = {}
 
         for product in self._forecast_products:
 
-            metadata = await self._storage.async_read_metadata(
-                product.key,
-            )
-
-            result = await self._fetcher.async_download(
-                product,
-                metadata,
-            )
+            result = remote_results[
+                product.key
+            ]
 
             if not result.downloaded:
 
@@ -207,13 +325,22 @@ class Engine:
 
                     result = await self._fetcher.async_download(
                         product,
+                        force=True,
                     )
+
+            decoded = await self._decoder.async_decode(
+                result,
+                grid_cell,
+            )
 
             decoded_products[
                 product.key
-            ] = self._decoder.decode(
-                result,
-                grid_cell,
+            ] = decoded
+
+            latest_product_timestamp = (
+                decoded.values[0].timestamp
+                if decoded.values
+                else None
             )
 
             if result.downloaded:
@@ -222,6 +349,17 @@ class Engine:
                     result,
                 )
 
+            if latest_product_timestamp is not None:
+                self._latest_product_timestamps[
+                    product.key
+                ] = latest_product_timestamp
+
+            self._metadata_cache[
+                product.key
+            ] = result.metadata
+
+            if result.downloaded:
+
                 await self._storage.async_delete_old_files(
                     product,
                     result.valid_until,
@@ -229,14 +367,9 @@ class Engine:
 
         product = RW
 
-        metadata = await self._storage.async_read_metadata(
-            product.key,
-        )
-
-        result = await self._fetcher.async_download(
-            product,
-            metadata,
-        )
+        result = remote_results[
+            product.key
+        ]
 
         if not result.downloaded:
 
@@ -248,6 +381,7 @@ class Engine:
 
                 result = await self._fetcher.async_download(
                     product,
+                    force=True,
                 )
 
         grid_cells = tuple(
@@ -256,7 +390,7 @@ class Engine:
             )
         )
 
-        decoded_rw_by_cell = self._decoder.decode_cells(
+        decoded_rw_by_cell = await self._decoder.async_decode_cells(
             result,
             grid_cells,
         )
@@ -271,11 +405,28 @@ class Engine:
 
         latest = decoded.values[-1]
 
+        latest_product_timestamp = (
+            decoded.values[0].timestamp
+            if decoded.values
+            else None
+        )
+
         if result.downloaded:
 
             await self._history.store(
                 result,
             )
+
+        if latest_product_timestamp is not None:
+            self._latest_product_timestamps[
+                product.key
+            ] = latest_product_timestamp
+
+        self._metadata_cache[
+            product.key
+        ] = result.metadata
+
+        if result.downloaded:
 
             await self._history.prune()
 
@@ -359,6 +510,8 @@ class Engine:
         if not changed:
             return
 
+        self._state_cache.clear()
+
         self._rolling_cache_anchor = None
         self._rolling_cache_grid_cells = ()
         self._rolling_cache = {}
@@ -367,6 +520,87 @@ class Engine:
             self._update_callbacks
         ):
             callback()
+
+    def get_diagnostics(
+        self,
+        state: State | None,
+    ) -> dict[str, object]:
+        """Return non-sensitive runtime diagnostics."""
+
+        products: dict[str, object] = {}
+
+        for product in self._products:
+
+            timestamp = self._latest_product_timestamps.get(
+                product.key,
+            )
+
+            metadata = self._metadata_cache.get(
+                product.key,
+                ProductMetadata(),
+            )
+
+            products[
+                product.key
+            ] = {
+                "last_product_timestamp": (
+                    timestamp.isoformat()
+                    if timestamp is not None
+                    else None
+                ),
+                "fresh": (
+                    state.is_product_fresh(
+                        product,
+                    )
+                    if state is not None
+                    else None
+                ),
+                "publication_interval_seconds": int(
+                    product.publication_interval.total_seconds()
+                ),
+                "publication_delay_seconds": int(
+                    product.publication_delay.total_seconds()
+                ),
+                "freshness_window_seconds": int(
+                    product.freshness_window.total_seconds()
+                ),
+                "http_metadata": {
+                    "etag": metadata.etag,
+                    "last_modified": metadata.last_modified,
+                },
+            }
+
+        return {
+            "products": products,
+            "registered_grid_cells": len(
+                self._grid_cell_references
+            ),
+            "config_entry_references": sum(
+                self._grid_cell_references.values()
+            ),
+            "state_cache_entries": len(
+                self._state_cache
+            ),
+            "rolling_cache_entries": len(
+                self._rolling_cache
+            ),
+            "rolling_cache_anchor": (
+                self._rolling_cache_anchor.isoformat()
+                if self._rolling_cache_anchor is not None
+                else None
+            ),
+            "backfill_anchor": (
+                self._backfill_anchor.isoformat()
+                if self._backfill_anchor is not None
+                else None
+            ),
+            "backfill_tasks": len(
+                self._backfill_tasks
+            ),
+            "update_callbacks": len(
+                self._update_callbacks
+            ),
+        }
 
     async def async_shutdown(
         self,

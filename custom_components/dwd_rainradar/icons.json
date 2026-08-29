@@ -1,0 +1,12 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "precipitation_active": {
+        "default": "mdi:weather-partly-cloudy",
+        "state": {
+          "on": "mdi:weather-rainy"
+        }
+      }
+    }
+  }
+}

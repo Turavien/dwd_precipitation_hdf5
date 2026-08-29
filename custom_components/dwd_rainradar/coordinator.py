@@ -17,7 +17,7 @@ from .state import State
 _LOGGER = logging.getLogger(__name__)
 
 UPDATE_INTERVAL = timedelta(
-    seconds=90,
+    seconds=30,
 )
 
 
@@ -39,11 +39,11 @@ class UpdateCoordinator(
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=entry,
             name="dwd_rainradar",
             update_interval=UPDATE_INTERVAL,
+            always_update=True,
         )
-
-        self.config_entry = entry
 
         self._engine = engine
 
@@ -70,6 +70,15 @@ class UpdateCoordinator(
             self.hass,
             self.async_request_refresh(),
             "DWD Rain Radar background refresh",
+        )
+
+    def get_diagnostics(
+        self,
+    ) -> dict[str, object]:
+        """Return non-sensitive runtime diagnostics."""
+
+        return self._engine.get_diagnostics(
+            self.data,
         )
 
     def unregister_engine(
