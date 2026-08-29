@@ -1,5 +1,9 @@
 """DWD Rain Radar integration."""
 
+# Derived in part from DWD Precipitation by Hoffmann77.
+# Substantially modified for DWD Rain Radar by Turavien, 2026.
+# SPDX-License-Identifier: Apache-2.0
+
 from dataclasses import dataclass
 
 from homeassistant.config_entries import ConfigEntry

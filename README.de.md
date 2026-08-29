@@ -4,7 +4,7 @@
 ![GitHub release](https://img.shields.io/github/v/release/Turavien/dwd_rainradar)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Turavien/dwd_rainradar)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.3%2B-18BCF2?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)
 
 [![Open your Home Assistant instance and open the repository inside HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Turavien&repository=dwd_rainradar)
 
@@ -138,6 +138,8 @@ Sie stellt folgende Entitäten bereit:
 * Niederschlag aktiv (Binärsensor)
 
 ## Datenquellen
+
+Datenbasis: Deutscher Wetterdienst (DWD), Open Data. Die von dieser Integration bereitgestellten Werte werden aus diesen Ausgangsprodukten verarbeitet und abgeleitet.
 
 Alle Daten stammen aus öffentlich verfügbaren Open-Data-Produkten des Deutschen Wetterdienstes (DWD), die jeweils unterschiedliche Aufgaben erfüllen.
 
@@ -306,13 +308,15 @@ DWD Regenradar entstand als Fortführung der Integration [DWD Precipitation](htt
 
 Nachdem der Deutsche Wetterdienst (DWD) seine Radarprodukte auf das HDF5-Format umgestellt hatte, erforderte die ursprüngliche Integration umfangreiche Anpassungen. Dieses Projekt konzentrierte sich zunächst auf die Wiederherstellung der Kompatibilität und entwickelte sich anschließend schrittweise zu einer eigenständigen Integration mit eigener Architektur, Konfigurationsfluss und Sensormodell.
 
+Diese README und die darin beschriebene Integration wurden gegenüber dem ursprünglichen Projekt DWD Precipitation wesentlich verändert.
+
 ## Lizenz und Hinweise
 
-Dieses Projekt wird unter der MIT-Lizenz veröffentlicht.
+DWD Regenradar wird unter der **Apache License, Version 2.0** veröffentlicht.
 
-Teile der Radarverarbeitung basieren auf Komponenten des **wradlib**-Projekts.
+Das Projekt entstand aus **DWD Precipitation** von [@Hoffmann77](https://github.com/Hoffmann77), das unter der Apache License, Version 2.0 veröffentlicht wurde. Aus diesem Projekt hervorgegangene Dateien wurden seit 2026 von Turavien für DWD Regenradar wesentlich verändert.
 
-Die entsprechende Lizenz befindet sich in diesem Repository unter:
+Frühere Versionen der Radarverarbeitung enthielten angepasste Komponenten des **wradlib**-Projekts. Der zugehörige MIT-Lizenzhinweis bleibt in diesem Repository erhalten:
 
 ```text
 custom_components/dwd_rainradar/radar/LICENSE.txt

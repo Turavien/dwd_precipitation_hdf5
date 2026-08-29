@@ -1,5 +1,9 @@
 """Config flow for the DWD Rain Radar integration."""
 
+# Derived in part from DWD Precipitation by Hoffmann77.
+# Substantially modified for DWD Rain Radar by Turavien, 2026.
+# SPDX-License-Identifier: Apache-2.0
+
 from __future__ import annotations
 
 import logging

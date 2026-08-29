@@ -4,7 +4,7 @@
 ![GitHub release](https://img.shields.io/github/v/release/Turavien/dwd_rainradar)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Turavien/dwd_rainradar)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.3%2B-18BCF2?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)
 
 [![Open your Home Assistant instance and open the repository inside HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Turavien&repository=dwd_rainradar)
 
@@ -138,6 +138,8 @@ It provides the following entities:
 * Precipitation active (binary sensor)
 
 ## Data Sources
+
+Data source: Deutscher Wetterdienst (DWD) Open Data. The values exposed by this integration are processed and derived from these source products.
 
 The integration currently uses three official DWD Open Data radar products, each serving a specific purpose.
 
@@ -306,13 +308,15 @@ DWD Rain Radar originated as a continuation of the [DWD Precipitation](https://g
 
 When the German Weather Service (_Deutscher Wetterdienst_, DWD) migrated its radar products to HDF5, the original integration required substantial changes. This project started as a compatibility update and has since evolved into an independent integration with its own architecture, configuration flow and sensor model.
 
+This README and the integration it documents have been substantially modified from the original DWD Precipitation project.
+
 ## License and Credits
 
-This project is released under the MIT License.
+DWD Rain Radar is released under the **Apache License, Version 2.0**.
 
-Parts of the radar processing are based on components of the **wradlib** project.
+The project originated from **DWD Precipitation** by [@Hoffmann77](https://github.com/Hoffmann77), which was distributed under the Apache License, Version 2.0. Files derived from that project have been substantially modified for DWD Rain Radar by Turavien since 2026.
 
-The corresponding license is included in this repository:
+Earlier versions of the radar processing incorporated adapted components of the **wradlib** project. The corresponding MIT license notice is retained in this repository:
 
 ```text
 custom_components/dwd_rainradar/radar/LICENSE.txt
