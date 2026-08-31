@@ -1,7 +1,7 @@
 {
   "domain": "dwd_rainradar",
   "name": "DWD Rain Radar",
-  "version": "3.2.9",
+  "version": "3.2.10",
   "documentation": "https://github.com/Turavien/dwd_rainradar",
   "issue_tracker": "https://github.com/Turavien/dwd_rainradar/issues",
   "codeowners": [

@@ -14,6 +14,7 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -240,6 +241,7 @@ INTENSITY_SENSORS = (
         translation_key="intensity_now",
         native_unit_of_measurement=UnitOfVolumetricFlux.MILLIMETERS_PER_HOUR,
         device_class=SensorDeviceClass.PRECIPITATION_INTENSITY,
+        state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
         value_fn=lambda coordinator:
             coordinator.data.intensity_now,

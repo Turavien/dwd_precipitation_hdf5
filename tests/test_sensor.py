@@ -6,7 +6,10 @@ from datetime import (
 )
 from unittest.mock import MagicMock
 
-from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorStateClass,
+)
 from homeassistant.helpers.device_registry import DeviceEntryType
 
 from custom_components.dwd_rainradar.const import (
@@ -69,10 +72,17 @@ def test_sensor_descriptions_and_platform_settings() -> None:
         for description in FORECAST_SENSORS
     )
 
+    assert (
+        INTENSITY_SENSORS[0].state_class
+        is SensorStateClass.MEASUREMENT
+    )
+
     assert all(
         description.state_class is None
-        for description in INTENSITY_SENSORS
+        for description in INTENSITY_SENSORS[1:]
     )
+
+    assert EVENT_SENSORS[0].state_class is None
 
     assert (
         EVENT_SENSORS[0].device_class
